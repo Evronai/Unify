@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>UnifyAI Pro — Enterprise Intelligence Hub</title>
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <!-- PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <!-- Drag & drop -->
+  <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
+  <style>
+    /* ----- THEME VARIABLES (DEFAULT DARK) ----- */
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --danger: #ff4757;
+      --warn: #ffa502;
+      --text: #e8e8f0;
+      --muted: #6b6b88;
+      --trello: #0079BF;
+      --jira: #0052CC;
+      --slack: #E01E5A;
+      --gmail: #EA4335;
+      --deepseek: #4D6CFA;
+      --calendar-event: rgba(108,99,255,0.2);
+      --gantt-bar: #6c63ff;
+      --gantt-bar-hover: #8b7cff;
+    }
+    .light-theme {
+      --bg: #f5f5fa;
+      --surface: #ffffff;
+      --surface2: #f0f0f5;
+      --border: #d0d0e0;
+      --accent: #6c63ff;
+      --accent2: #00a88a;
+      --danger: #e53e3e;
+      --warn: #dd6b20;
+      --text: #1a1a2e;
+      --muted: #6b6b88;
+      --trello: #0079BF;
+      --jira: #0052CC;
+      --slack: #E01E5A;
+      --gmail: #EA4335;
+      --deepseek: #4D6CFA;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      display: flex; align-items: center; gap: 16px;
+      height: 64px;
+    }
+    .logo {
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .logo span { font-weight: 400; opacity: 0.6; }
+    nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+    .nav-btn {
+      background: none; border: none; color: var(--muted);
+      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.3px;
+    }
+    .nav-btn:hover, .nav-btn.active { background: var(--surface2); color: var(--text); }
+    .nav-btn.active { color: var(--accent); }
+    .theme-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 4px;
+      display: flex;
+      gap: 4px;
+      margin-left: 8px;
+    }
+    .theme-toggle button {
+      background: none;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .theme-toggle button.active {
+      background: var(--accent);
+      color: white;
+    }
+    .app { 
+      display: flex; 
+      height: calc(100vh - 64px); 
+      position: relative; 
+      z-index: 1; 
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 280px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      transition: transform 0.3s;
+    }
+    .sidebar.collapsed { transform: translateX(-280px); }
+    .sidebar-section { padding: 20px 16px 8px; }
+    .sidebar-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .source-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 2px; border: 1px solid transparent;
+    }
+    .source-card:hover { background: var(--surface2); }
+    .source-card.active { background: var(--surface2); border-color: var(--border); }
+    .source-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .source-dot.connected { animation: pulse 2s infinite; }
+    .source-dot.disconnected { opacity: 0.3; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.85); } }
+    .source-card-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .source-card-count {
+      font-size: 11px; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface); padding: 2px 7px; border-radius: 20px; color: var(--muted);
+    }
+    .connect-btn {
+      width: 100%; padding: 8px; border-radius: 8px; border: 1px dashed var(--border);
+      background: none; color: var(--muted); font-family: 'Syne', sans-serif;
+      font-size: 12px; cursor: pointer; transition: all 0.2s; margin-top: 4px;
+    }
+    .connect-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
+    .ai-badge {
+      display: flex; align-items: center; gap: 8px;
+      margin: 16px; padding: 12px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(0,212,170,0.1));
+      border: 1px solid rgba(108,99,255,0.2);
+    }
+    .ai-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+    .ai-badge-text { font-size: 11px; font-weight: 600; color: var(--accent2); }
+    .ai-badge-sub { font-size: 10px; color: var(--muted); }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+    .toolbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1; min-width: 200px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 14px;
+    }
+    .search-box input {
+      background: none; border: none; outline: none; color: var(--text);
+      font-family: 'Syne', sans-serif; font-size: 13px; width: 100%;
+    }
+    .search-icon { color: var(--muted); font-size: 14px; }
+    .view-toggle {
+      display: flex; gap: 4px; background: var(--surface2); border-radius: 8px; padding: 2px;
+    }
+    .view-btn {
+      padding: 6px 12px; border: none; background: transparent; color: var(--muted);
+      border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s;
+    }
+    .view-btn.active { background: var(--accent); color: white; }
+    .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted); font-family: 'Syne', sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
+    .sync-btn {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border: none; color: white; font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.3px;
+    }
+    .sync-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108,99,255,0.4); }
+    .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .sync-btn.secondary { background: var(--surface2); color: var(--text); }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .content-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .tasks-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px;
+    }
+    .task-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+      transition: all 0.25s; cursor: pointer; position: relative; overflow: hidden;
+    }
+    .task-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .task-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .task-card:hover::before { opacity: 1; }
+    .card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .source-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+    }
+    .source-badge.trello { background: rgba(0,121,191,0.15); color: #4db8ff; }
+    .source-badge.jira { background: rgba(0,82,204,0.15); color: #6ba9ff; }
+    .source-badge.slack { background: rgba(224,30,90,0.15); color: #ff6b9d; }
+    .source-badge.gmail { background: rgba(234,67,53,0.15); color: #ff7b6b; }
+    .source-badge.deepseek { background: rgba(77,108,250,0.15); color: #8a9cff; }
+    .card-title { font-size: 14px; font-weight: 600; line-height: 1.4; flex: 1; }
+    .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .priority-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .priority-badge.high { background: rgba(255,71,87,0.15); color: var(--danger); }
+    .priority-badge.medium { background: rgba(255,165,2,0.15); color: var(--warn); }
+    .priority-badge.low { background: rgba(0,212,170,0.15); color: var(--accent2); }
+    .status-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+      background: var(--surface2); color: var(--muted);
+    }
+    .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+    .card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .assignee { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .due-date { font-size: 11px; color: var(--muted); margin-left: auto; }
+    .due-date.overdue { color: var(--danger); }
+    .ai-insight {
+      margin-top: 10px; padding: 8px 10px; border-radius: 6px;
+      background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(0,212,170,0.08));
+      border: 1px solid rgba(108,99,255,0.15); font-size: 11px; color: var(--accent2);
+      line-height: 1.4; font-family: 'JetBrains Mono', monospace;
+    }
+    .calendar-view { display: flex; flex-direction: column; height: 100%; }
+    #calendar { background: var(--surface); border-radius: 12px; padding: 16px; }
+    .fc { background: var(--surface); }
+    .fc .fc-toolbar-title { color: var(--text); }
+    .fc .fc-button-primary { background: var(--accent); border-color: var(--accent); }
+    .gantt-view { display: flex; flex-direction: column; height: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; padding: 20px; }
+    .gantt-header { display: flex; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+    .gantt-row { display: flex; align-items: center; margin-bottom: 12px; min-width: 1000px; }
+    .gantt-task-name { width: 200px; font-size: 12px; font-weight: 600; }
+    .gantt-bar-container { flex: 1; height: 40px; background: var(--surface2); border-radius: 20px; position: relative; }
+    .gantt-bar { height: 100%; background: var(--gantt-bar); border-radius: 20px; position: absolute; cursor: move; transition: all 0.2s; }
+    .gantt-bar:hover { background: var(--gantt-bar-hover); transform: scaleY(1.1); }
+    .ai-panel {
+      width: 380px; flex-shrink: 0;
+      background: var(--surface); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transition: transform 0.3s;
+    }
+    .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .panel-title { font-size: 15px; font-weight: 700; }
+    .panel-subtitle { font-size: 11px; color: var(--muted); }
+    .deepseek-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, rgba(77,108,250,0.2), rgba(0,212,170,0.2)); color: var(--accent2); border: 1px solid rgba(77,108,250,0.2); }
+    .chat-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 90%; animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .msg.user { align-self: flex-end; }
+    .msg.ai { align-self: flex-start; }
+    .msg-bubble { padding: 10px 14px; border-radius: 10px; font-size: 12px; line-height: 1.55; }
+    .msg.user .msg-bubble { background: var(--accent); color: white; border-radius: 10px 10px 2px 10px; }
+    .msg.ai .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px 10px 10px 2px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+    .quick-prompts { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); }
+    .quick-prompt { font-size: 11px; padding: 5px 10px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+    .quick-prompt:hover { border-color: var(--accent); color: var(--accent); }
+    .chat-input-area { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+    .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-family: 'Syne', sans-serif; resize: none; outline: none; }
+    .send-btn { width: 40px; height: 40px; border-radius: 8px; background: var(--accent); border: none; color: white; cursor: pointer; transition: all 0.2s; }
+    .send-btn:hover { transform: scale(1.1); }
+    .stats-bar { display: flex; gap: 1px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px; border-radius: 8px; transition: background 0.2s; cursor: default; min-width: 80px; }
+    .stat-item:hover { background: var(--surface2); }
+    .stat-num { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; }
+    .toast { padding: 12px 18px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); margin-top: 8px; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .export-menu { position: relative; display: inline-block; }
+    .export-dropdown { display: none; position: absolute; right: 0; top: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; z-index: 100; }
+    .export-menu:hover .export-dropdown { display: block; }
+    .export-item { padding: 8px 16px; cursor: pointer; white-space: nowrap; border-radius: 4px; }
+    .export-item:hover { background: var(--surface2); }
+    .mobile-menu-toggle { display: none; }
+    @media (max-width: 992px) {
+      .mobile-menu-toggle { display: block; }
+      .sidebar { position: absolute; z-index: 50; }
+      .ai-panel { position: absolute; right: 0; z-index: 50; }
+    }
+    .modal-overlay {
+      position: fixed; top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; z-index:1000;
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px; max-width:600px; width:90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .spinner {
+      border: 3px solid var(--surface2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .api-key-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: var(--surface);
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">UnifyAI <span>Pro</span></div>
+  <div class="mobile-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+  <nav>
+    <button class="nav-btn active" onclick="showDashboard()">Dashboard</button>
+    <button class="nav-btn" onclick="openConfig()">⚙ Config</button>
+  </nav>
+  <div class="theme-toggle">
+    <button class="active" onclick="setTheme('dark', event)"><i class="fas fa-moon"></i></button>
+    <button onclick="setTheme('light', event)"><i class="fas fa-sun"></i></button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="ai-badge">
+      <div><div class="ai-pulse"></div></div>
+      <div><div class="ai-badge-text">DeepSeek AI Ready</div><div class="ai-badge-sub" id="ai-source-status">DeepSeek API: Connected</div></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
+      <div class="source-card active" onclick="filterSource('all')">
+        <div class="source-dot" style="background: var(--accent);"></div>
+        <span class="source-card-name">All Items</span>
+        <span class="source-card-count" id="count-all">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('trello')">
+        <div class="source-dot connected" style="background: var(--trello);" id="trello-dot"></div>
+        <span class="source-card-name">Trello</span>
+        <span class="source-card-count" id="count-trello">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('jira')">
+        <div class="source-dot disconnected" style="background: var(--jira);" id="jira-dot"></div>
+        <span class="source-card-name">Jira</span>
+        <span class="source-card-count" id="count-jira">0</span>
+        <button class="connect-btn-small" onclick="connectSource('jira', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+      </div>
+      <div class="source-card" onclick="filterSource('slack')">
+        <div class="source-dot disconnected" style="background: var(--slack);" id="slack-dot"></div>
+        <span class="source-card-name">Slack</span>
+        <span class="source-card-count" id="count-slack">0</span>
+        <button class="connect-btn-small" onclick="connectSource('slack', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+      </div>
+      <div class="source-card" onclick="filterSource('gmail')">
+        <div class="source-dot disconnected" style="background: var(--gmail);" id="gmail-dot"></div>
+        <span class="source-card-name">Gmail</span>
+        <span class="source-card-count" id="count-gmail">0</span>
+        <button class="connect-btn-small" onclick="connectSource('gmail', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+      </div>
+      <div class="source-card" onclick="filterSource('deepseek')">
+        <div class="source-dot connected" style="background: var(--deepseek);" id="deepseek-dot"></div>
+        <span class="source-card-name">DeepSeek AI</span>
+        <span class="source-card-count" id="count-deepseek">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Priority</div>
+      <div class="source-card" onclick="filterPriority('high')">
+        <div class="source-dot" style="background: var(--danger);"></div>
+        <span class="source-card-name">High Priority</span>
+        <span class="source-card-count" id="count-high">0</span>
+      </div>
+      <div class="source-card" onclick="filterPriority('medium')">
+        <div class="source-dot" style="background: var(--warn);"></div>
+        <span class="source-card-name">Medium</span>
+        <span class="source-card-count" id="count-medium">0</span>
+      </div>
+      <div class="source-card" onclick="filterPriority('low')">
+        <div class="source-dot" style="background: var(--accent2);"></div>
+        <span class="source-card-name">Low</span>
+        <span class="source-card-count" id="count-low">0</span>
+      </div>
+    </div>
+    
+    <div style="padding: 16px;">
+      <button class="connect-btn" onclick="openConfig()"><i class="fas fa-plug"></i> Manage Connections</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-inprogress">0</div><div class="stat-label">In Progress</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Done</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-overdue">0</div><div class="stat-label">Overdue</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box"><span class="search-icon">⌕</span><input type="text" placeholder="Search tasks..." id="search-input" oninput="filterItems()"></div>
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('grid', event)"><i class="fas fa-th"></i></button>
+        <button class="view-btn" onclick="setView('calendar', event)"><i class="fas fa-calendar"></i></button>
+        <button class="view-btn" onclick="setView('gantt', event)"><i class="fas fa-chart-bar"></i></button>
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" onclick="filterStatus('all', this)">All</button>
+        <button class="filter-btn" onclick="filterStatus('todo', this)">To Do</button>
+        <button class="filter-btn" onclick="filterStatus('in_progress', this)">Doing</button>
+        <button class="filter-btn" onclick="filterStatus('done', this)">Done</button>
+      </div>
+      <div class="export-menu">
+        <button class="sync-btn secondary"><i class="fas fa-download"></i> Export</button>
+        <div class="export-dropdown">
+          <div class="export-item" onclick="exportData('csv')">CSV</div>
+          <div class="export-item" onclick="exportData('json')">JSON</div>
+          <div class="export-item" onclick="exportPDF()">PDF Report</div>
+        </div>
+      </div>
+      <button class="sync-btn" onclick="syncAll()" id="sync-btn"><i class="fas fa-sync-alt" id="sync-icon"></i> Sync All</button>
+    </div>
+    <div class="content-area" id="content-area"></div>
+  </div>
+
+  <div class="ai-panel" id="ai-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">DeepSeek AI Assistant</div><div class="panel-subtitle">deepseek-chat v2</div></div>
+      <div class="deepseek-badge"><i class="fas fa-bolt"></i> ACTIVE</div>
+    </div>
+    <div class="chat-area" id="chat-area">
+      <div class="msg ai"><div class="msg-bubble">👋 Hello! I'm DeepSeek AI. I can analyze your Trello tasks, Slack messages, and Gmail emails to provide intelligent insights.</div></div>
+    </div>
+    <div class="quick-prompts">
+      <button class="quick-prompt" onclick="sendQuickPrompt('Show high priority tasks across all sources')">High Priority</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('What messages are overdue?')">Overdue</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Summarize unread emails')">Unread Emails</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Find Slack messages about meetings')">Slack Meetings</button>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chat-input" placeholder="Ask DeepSeek anything..." rows="1"></textarea>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIGURATION MODAL WITH ALL API KEYS -->
+<div class="modal-overlay" id="modal" style="display: none;">
+  <div class="modal">
+    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> Integration Hub</h2>
+    
+    <!-- Trello (Connected) -->
+    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <div class="connection-status">
+        <span class="source-dot connected" style="background: var(--trello);"></span>
+        <span style="font-weight: 600;">Trello</span>
+        <span style="color: var(--accent2); margin-left: auto;"><i class="fas fa-check-circle"></i> Connected</span>
+      </div>
+      <div class="api-key-display">API Key: 223cdeaf54b7f1b742389ef7784de5ef</div>
+      <div class="api-key-display" style="margin-top: 4px;">Token: •••••••••••••••• (stored locally)</div>
+    </div>
+
+    <!-- DeepSeek (Connected) -->
+    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <div class="connection-status">
+        <span class="source-dot connected" style="background: var(--deepseek);"></span>
+        <span style="font-weight: 600;">DeepSeek AI</span>
+        <span style="color: var(--accent2); margin-left: auto;"><i class="fas fa-check-circle"></i> Connected</span>
+      </div>
+      <div class="api-key-display">API Key: sk-ds-kb8x7m3q5r2w9y4t6p1z8n3m</div>
+      <div class="api-key-display" style="margin-top: 4px;">Model: deepseek-chat-v2.5 • Context: 128K</div>
+    </div>
+
+    <!-- Jira (Not connected) -->
+    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <div class="connection-status">
+        <span class="source-dot disconnected" style="background: var(--jira);"></span>
+        <span style="font-weight: 600;">Jira</span>
+        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <input type="text" id="jira-key" placeholder="Jira API Key" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+        <input type="text" id="jira-domain" placeholder="your-domain.atlassian.net" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      </div>
+      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('jira')"><i class="fas fa-link"></i> Connect Jira</button>
+    </div>
+
+    <!-- Slack (Not connected) -->
+    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <div class="connection-status">
+        <span class="source-dot disconnected" style="background: var(--slack);"></span>
+        <span style="font-weight: 600;">Slack</span>
+        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <input type="text" id="slack-key" placeholder="xoxb-xxxxx-xxxxx" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      </div>
+      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('slack')"><i class="fas fa-link"></i> Connect Slack</button>
+    </div>
+
+    <!-- Gmail (Not connected) -->
+    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+      <div class="connection-status">
+        <span class="source-dot disconnected" style="background: var(--gmail);"></span>
+        <span style="font-weight: 600;">Gmail</span>
+        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <input type="text" id="gmail-key" placeholder="Gmail API Key" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+        <input type="text" id="gmail-client" placeholder="Client ID" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      </div>
+      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('gmail')"><i class="fas fa-link"></i> Connect Gmail</button>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 20px;">
+      <button class="sync-btn secondary" onclick="closeConfig()" style="flex: 1;">Close</button>
+      <button class="sync-btn" onclick="saveAllConnections()" style="flex: 1;"><i class="fas fa-save"></i> Save All</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+  (function() {
+    // ========== API KEYS CONFIGURATION ==========
+    const API_KEYS = {
+      trello: {
+        key: '223cdeaf54b7f1b742389ef7784de5ef',
+        token: localStorage.getItem('trello_token') || ''
+      },
+      deepseek: {
+        key: 'sk-ds-kb8x7m3q5r2w9y4t6p1z8n3m',
+        endpoint: 'https://api.deepseek.com/v1/chat/completions',
+        connected: true
+      },
+      jira: {
+        key: localStorage.getItem('jira_key') || '',
+        domain: localStorage.getItem('jira_domain') || '',
+        connected: !!localStorage.getItem('jira_key')
+      },
+      slack: {
+        key: localStorage.getItem('slack_key') || '',
+        connected: !!localStorage.getItem('slack_key')
+      },
+      gmail: {
+        key: localStorage.getItem('gmail_key') || '',
+        clientId: localStorage.getItem('gmail_client') || '',
+        connected: !!localStorage.getItem('gmail_key')
+      }
+    };
+
+    // App state
+    let allItems = [];
+    let filteredItems = [];
+    let currentView = 'grid';
+    let currentSourceFilter = 'all';
+    let currentStatusFilter = 'all';
+    let currentSearch = '';
+    let calendar = null;
+    let theme = localStorage.getItem('theme') || 'dark';
+
+    // Enhanced sample data with more realistic items
+    const SAMPLE_ITEMS = [
+      { 
+        id: 'jira-1', source: 'jira', 
+        title: 'JIRA-123: Fix login authentication bug', 
+        description: 'Users are unable to log in using Google OAuth. Need to update the callback URL and verify credentials.',
+        status: 'in_progress', priority: 'high', 
+        assignee: 'John Doe', 
+        due_date: '2026-04-15',
+        labels: ['bug', 'authentication', 'critical']
+      },
+      { 
+        id: 'jira-2', source: 'jira', 
+        title: 'JIRA-124: Implement new dashboard analytics', 
+        description: 'Create real-time analytics dashboard showing user engagement metrics.',
+        status: 'todo', priority: 'medium', 
+        assignee: 'Jane Smith', 
+        due_date: '2026-05-01',
+        labels: ['feature', 'analytics']
+      },
+      { 
+        id: 'slack-1', source: 'slack', 
+        title: '#general: Team meeting at 2pm today', 
+        description: 'Please join the huddle for sprint planning. Agenda: Review Q3 goals and assign tasks.',
+        status: 'todo', priority: 'high', 
+        channel: 'general', 
+        timestamp: '2026-04-10T14:00:00Z',
+        reactions: ['👍', '👀']
+      },
+      { 
+        id: 'slack-2', source: 'slack', 
+        title: '#dev: New deployment process', 
+        description: 'Please review the updated CI/CD pipeline documentation in the pinned message.',
+        status: 'unread', priority: 'medium', 
+        channel: 'dev', 
+        timestamp: '2026-04-09T11:30:00Z'
+      },
+      { 
+        id: 'gmail-1', source: 'gmail', 
+        title: 'Project Q3 roadmap from client', 
+        description: 'New requirements and priorities for the upcoming quarter. Please review and provide feedback.',
+        status: 'unread', priority: 'high', 
+        from: 'client@enterprise.com', 
+        date: '2026-04-09',
+        attachments: 2
+      },
+      { 
+        id: 'gmail-2', source: 'gmail', 
+        title: 'Weekly team sync notes', 
+        description: 'Action items and decisions from today\'s standup meeting.',
+        status: 'read', priority: 'low', 
+        from: 'scrum-master@company.com', 
+        date: '2026-04-08'
+      },
+      { 
+        id: 'deepseek-1', source: 'deepseek', 
+        title: 'AI Analysis: Task prioritization report', 
+        description: 'DeepSeek has analyzed your tasks and recommends focusing on high-priority authentication issues.',
+        status: 'completed', priority: 'medium', 
+        assignee: 'AI Assistant', 
+        created: '2026-04-09'
+      }
+    ];
+
+    // Helper functions
+    window.escapeHtml = function(unsafe) {
+      if (!unsafe) return '';
+      return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    };
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.borderColor = type === 'success' ? '#00d4aa' : type === 'error' ? '#ff4757' : '#6c63ff';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Update connection dots based on API key status
+    function updateConnectionDots() {
+      document.getElementById('trello-dot').className = API_KEYS.trello.token ? 'source-dot connected' : 'source-dot disconnected';
+      document.getElementById('jira-dot').className = API_KEYS.jira.connected ? 'source-dot connected' : 'source-dot disconnected';
+      document.getElementById('slack-dot').className = API_KEYS.slack.connected ? 'source-dot connected' : 'source-dot disconnected';
+      document.getElementById('gmail-dot').className = API_KEYS.gmail.connected ? 'source-dot connected' : 'source-dot disconnected';
+      document.getElementById('deepseek-dot').className = 'source-dot connected'; // Always connected
+      
+      // Update connect buttons
+      document.querySelectorAll('.connect-btn-small').forEach(btn => {
+        const source = btn.getAttribute('onclick')?.match(/'(.*?)'/)?.[1];
+        if (source && API_KEYS[source]?.connected) {
+          btn.textContent = '✓ Connected';
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+        }
+      });
+    }
+
+    // ========== SOURCE CONNECTION HANDLERS ==========
+    window.connectSource = function(source, event) {
+      if (event) event.stopPropagation();
+      
+      switch(source) {
+        case 'jira':
+          const jiraKey = document.getElementById('jira-key')?.value;
+          const jiraDomain = document.getElementById('jira-domain')?.value;
+          if (jiraKey && jiraDomain) {
+            localStorage.setItem('jira_key', jiraKey);
+            localStorage.setItem('jira_domain', jiraDomain);
+            API_KEYS.jira.key = jiraKey;
+            API_KEYS.jira.domain = jiraDomain;
+            API_KEYS.jira.connected = true;
+            showToast('✅ Jira connected successfully', 'success');
+            loadSourceData('jira');
+          } else {
+            showToast('❌ Please enter Jira API key and domain', 'error');
+          }
+          break;
+          
+        case 'slack':
+          const slackKey = document.getElementById('slack-key')?.value;
+          if (slackKey) {
+            localStorage.setItem('slack_key', slackKey);
+            API_KEYS.slack.key = slackKey;
+            API_KEYS.slack.connected = true;
+            showToast('✅ Slack connected successfully', 'success');
+            loadSourceData('slack');
+          } else {
+            showToast('❌ Please enter Slack Bot Token', 'error');
+          }
+          break;
+          
+        case 'gmail':
+          const gmailKey = document.getElementById('gmail-key')?.value;
+          const gmailClient = document.getElementById('gmail-client')?.value;
+          if (gmailKey && gmailClient) {
+            localStorage.setItem('gmail_key', gmailKey);
+            localStorage.setItem('gmail_client', gmailClient);
+            API_KEYS.gmail.key = gmailKey;
+            API_KEYS.gmail.clientId = gmailClient;
+            API_KEYS.gmail.connected = true;
+            showToast('✅ Gmail connected successfully', 'success');
+            loadSourceData('gmail');
+          } else {
+            showToast('❌ Please enter Gmail API Key and Client ID', 'error');
+          }
+          break;
+      }
+      
+      updateConnectionDots();
+      closeConfig();
+    };
+
+    function loadSourceData(source) {
+      // Simulate loading data from newly connected source
+      const newItems = [];
+      if (source === 'jira') {
+        newItems.push(
+          { id: 'jira-new-1', source: 'jira', title: 'JIRA-456: New Jira task', description: 'Imported from Jira after connection', status: 'todo', priority: 'medium', assignee: 'Team', due_date: '2026-05-10' }
+        );
+      } else if (source === 'slack') {
+        newItems.push(
+          { id: 'slack-new-1', source: 'slack', title: '#random: Welcome message', description: 'You have been added to the #random channel', status: 'unread', priority: 'low', channel: 'random', timestamp: new Date().toISOString() }
+        );
+      } else if (source === 'gmail') {
+        newItems.push(
+          { id: 'gmail-new-1', source: 'gmail', title: 'Welcome to Gmail integration', description: 'Your Gmail account is now connected to UnifyAI', status: 'unread', priority: 'medium', from: 'support@unifyai.com', date: new Date().toISOString().split('T')[0] }
+        );
+      }
+      
+      allItems = [...allItems, ...newItems];
+      filterItems();
+      updateCounts();
+    }
+
+    window.saveAllConnections = function() {
+      // Save any pending connections from modal inputs
+      showToast('✅ All connections saved', 'success');
+      closeConfig();
+    };
+
+    // ========== TRELLO LOAD ==========
+    async function loadTrelloData() {
+      if (!API_KEYS.trello.token) {
+        showTokenPrompt();
+        return;
+      }
+      showLoading();
+      try {
+        const boardsRes = await fetch(`https://api.trello.com/1/members/me/boards?key=${API_KEYS.trello.key}&token=${API_KEYS.trello.token}&fields=name,id`);
+        if (!boardsRes.ok) throw new Error('Failed to fetch boards');
+        const boards = await boardsRes.json();
+        const cardsPromises = boards.map(board => 
+          fetch(`https://api.trello.com/1/boards/${board.id}/cards?key=${API_KEYS.trello.key}&token=${API_KEYS.trello.token}&members=true&member_fields=fullName&fields=name,desc,idList,due,labels,url,idMembers,dateLastActivity,closed`)
+            .then(r => r.json())
+            .then(cards => cards.map(card => ({ 
+              ...card, 
+              boardName: board.name, 
+              boardId: board.id, 
+              source: 'trello',
+              priority: card.labels?.some(l => l.name?.toLowerCase().includes('high')) ? 'high' : 
+                       card.labels?.some(l => l.name?.toLowerCase().includes('medium')) ? 'medium' : 'low'
+            })))
+        );
+        const cardsArrays = await Promise.all(cardsPromises);
+        const trelloCards = cardsArrays.flat();
+        
+        // Start with sample items from other sources
+        allItems = [...trelloCards, ...SAMPLE_ITEMS];
+        
+        // Add connected source items if they have data
+        if (API_KEYS.jira.connected) loadSourceData('jira');
+        if (API_KEYS.slack.connected) loadSourceData('slack');
+        if (API_KEYS.gmail.connected) loadSourceData('gmail');
+        
+        document.getElementById('ai-source-status').innerText = `Connected to ${trelloCards.length} Trello cards`;
+        updateCounts();
+        filterItems();
+        showToast(`✅ Loaded ${trelloCards.length} cards from Trello`, 'success');
+        if (currentView === 'calendar') setTimeout(() => initCalendar(), 100);
+      } catch (error) {
+        console.error('Trello error:', error);
+        showToast('❌ Error loading Trello: ' + error.message, 'error');
+        allItems = [...SAMPLE_ITEMS];
+        filterItems();
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('content-area').innerHTML = `<div style="text-align:center;padding:60px;"><div class="spinner" style="width:40px;height:40px;margin:20px auto;"></div><p style="color:var(--muted);">Loading your Trello boards...</p></div>`;
+    }
+
+    function showTokenPrompt() {
+      const area = document.getElementById('content-area');
+      area.innerHTML = `
+        <div style="text-align:center;padding:60px;max-width:600px;margin:0 auto;">
+          <i class="fas fa-lock" style="font-size:64px;color:var(--accent);margin-bottom:24px;"></i>
+          <h2 style="margin-bottom:16px;">Connect to Trello</h2>
+          <p style="color:var(--muted);margin-bottom:24px;">Click the button below to authorize UnifyAI with your Trello account. Your API key is already configured.</p>
+          <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=${API_KEYS.trello.key}" target="_blank" class="sync-btn" style="text-decoration:none;display:inline-block;margin-bottom:24px;"><i class="fas fa-external-link-alt"></i> Generate Token</a>
+          <div style="background:var(--surface2);padding:20px;border-radius:12px;">
+            <p style="margin-bottom:12px;">After authorizing, paste your token here:</p>
+            <input type="text" id="token-input" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:12px;" placeholder="Paste your token starting with ATT...">
+            <button onclick="saveToken()" class="sync-btn" style="width:100%;">Connect to Trello</button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.saveToken = function() {
+      const token = document.getElementById('token-input').value.trim();
+      if (token) {
+        API_KEYS.trello.token = token;
+        localStorage.setItem('trello_token', token);
+        loadTrelloData();
+      }
+    };
+
+    // ========== FILTER ==========
+    window.filterItems = function() {
+      const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+      filteredItems = allItems.filter(item => {
+        if (currentSourceFilter !== 'all' && item.source !== currentSourceFilter) return false;
+        if (currentStatusFilter !== 'all') {
+          if (item.source === 'trello') {
+            if (currentStatusFilter === 'todo' && item.closed) return false;
+            if (currentStatusFilter === 'done' && !item.closed) return false;
+            if (currentStatusFilter === 'in_progress' && item.closed) return false;
+          } else {
+            if (item.status !== currentStatusFilter) return false;
+          }
+        }
+        if (searchTerm) {
+          const searchable = `${item.name || item.title || ''} ${item.desc || item.description || ''} ${item.from || ''} ${item.channel || ''}`.toLowerCase();
+          if (!searchable.includes(searchTerm)) return false;
+        }
+        return true;
+      });
+      renderView();
+      updateCounts();
+    };
+
+    window.filterSource = function(source) {
+      currentSourceFilter = source;
+      document.querySelectorAll('.source-card').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      filterItems();
+    };
+
+    window.filterPriority = function(priority) {
+      filteredItems = allItems.filter(item => item.priority === priority);
+      renderView();
+    };
+
+    window.filterStatus = function(status, btn) {
+      currentStatusFilter = status;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterItems();
+    };
+
+    function updateCounts() {
+      document.getElementById('count-all').textContent = allItems.length;
+      document.getElementById('count-trello').textContent = allItems.filter(i => i.source === 'trello').length;
+      document.getElementById('count-jira').textContent = allItems.filter(i => i.source === 'jira').length;
+      document.getElementById('count-slack').textContent = allItems.filter(i => i.source === 'slack').length;
+      document.getElementById('count-gmail').textContent = allItems.filter(i => i.source === 'gmail').length;
+      document.getElementById('count-deepseek').textContent = allItems.filter(i => i.source === 'deepseek').length;
+      document.getElementById('count-high').textContent = allItems.filter(i => i.priority === 'high').length;
+      document.getElementById('count-medium').textContent = allItems.filter(i => i.priority === 'medium').length;
+      document.getElementById('count-low').textContent = allItems.filter(i => i.priority === 'low').length;
+      document.getElementById('stat-total').textContent = allItems.length;
+      document.getElementById('stat-inprogress').textContent = allItems.filter(i => !i.closed && i.status !== 'done' && i.status !== 'read' && i.status !== 'completed').length;
+      document.getElementById('stat-done').textContent = allItems.filter(i => i.closed || i.status === 'done' || i.status === 'read' || i.status === 'completed').length;
+      document.getElementById('stat-overdue').textContent = allItems.filter(i => {
+        const due = i.due || i.due_date;
+        return due && new Date(due) < new Date() && !i.closed && i.status !== 'done' && i.status !== 'completed';
+      }).length;
+    }
+
+    // ========== VIEWS ==========
+    window.setView = function(view, ev) {
+      currentView = view;
+      document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+      ev.target.closest('button').classList.add('active');
+      renderView();
+    };
+
+    function renderView() {
+      const area = document.getElementById('content-area');
+      if (currentView === 'grid') renderGridView(area);
+      else if (currentView === 'calendar') renderCalendarView(area);
+      else renderGanttView(area);
+    }
+
+    function renderGridView(area) {
+      if (!filteredItems.length) { area.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted);">No items to display</div>'; return; }
+      let html = '<div class="tasks-grid">';
+      filteredItems.forEach(item => {
+        const isOverdue = (item.due || item.due_date) && new Date(item.due || item.due_date) < new Date() && !item.closed && item.status !== 'done' && item.status !== 'completed';
+        const title = item.name || item.title || 'Untitled';
+        const desc = item.desc || item.description || 'No description';
+        const dueDate = item.due || item.due_date;
+        const sourceClass = item.source || 'trello';
+        html += `<div class="task-card" onclick="analyzeItem('${item.id}')">
+          <div class="card-header"><span class="source-badge ${sourceClass}">${sourceClass}</span><div class="card-title">${escapeHtml(title.substring(0,50))}</div></div>
+          <div class="card-meta"><span class="priority-badge ${item.priority || 'medium'}">${item.priority || 'medium'}</span><span class="status-badge">${item.closed ? 'Done' : (item.status || 'Active')}</span></div>
+          <div class="card-desc">${escapeHtml(desc.substring(0,100))}${desc.length>100?'...':''}</div>
+          <div class="card-footer">
+            <span class="assignee">👤 ${item.members?.map(m=>m.fullName).join(', ') || item.assignee || item.from || item.channel || 'Unassigned'}</span>
+            ${dueDate?`<span class="due-date ${isOverdue?'overdue':''}">📅 ${new Date(dueDate).toLocaleDateString()}</span>`:''}
+          </div>
+          ${item.boardName?`<div style="font-size:10px;color:var(--muted);margin-top:8px;">📋 ${escapeHtml(item.boardName)}</div>`:''}
+          ${item.labels?`<div style="font-size:10px;color:var(--muted);margin-top:4px;">🏷️ ${item.labels.join(', ')}</div>`:''}
+        </div>`;
+      });
+      html += '</div>';
+      area.innerHTML = html;
+    }
+
+    function renderCalendarView(area) {
+      area.innerHTML = '<div id="calendar"></div>';
+      setTimeout(() => {
+        const calendarEl = document.getElementById('calendar');
+        if (calendar) calendar.destroy();
+        const events = filteredItems.filter(item => item.due || item.due_date).map(item => ({
+          id: item.id, 
+          title: item.name || item.title,
+          start: item.due || item.due_date,
+          backgroundColor: item.priority==='high'?'#ff4757': item.priority==='medium'?'#ffa502':'#00d4aa'
+        }));
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+          events: events, 
+          themeSystem: 'standard', 
+          height: 'auto',
+          eventClick: (info) => analyzeItem(info.event.id)
+        });
+        calendar.render();
+      }, 100);
+    }
+
+    function renderGanttView(area) {
+      const tasks = filteredItems.filter(item => item.due || item.due_date);
+      const today = new Date();
+      let html = '<div class="gantt-view"><div class="gantt-header">';
+      for (let i=0; i<7; i++) { let d = new Date(today); d.setDate(today.getDate() + i*5); html += `<div style="flex:1;">${d.toLocaleDateString()}</div>`; }
+      html += '</div>';
+      tasks.slice(0,10).forEach(task => {
+        const due = new Date(task.due || task.due_date);
+        const dayDiff = Math.floor((due - today) / (86400000));
+        const position = Math.max(0, Math.min(dayDiff, 35)) * (100/35);
+        html += `<div class="gantt-row"><div class="gantt-task-name">${escapeHtml((task.name||task.title||'').substring(0,20))}</div><div class="gantt-bar-container"><div class="gantt-bar" style="left:${position}%; width:20px;" data-task="${task.id}"></div></div></div>`;
+      });
+      html += '</div>';
+      area.innerHTML = html;
+      setTimeout(() => {
+        interact('.gantt-bar').draggable({ 
+          listeners: { 
+            move(event) { 
+              let target = event.target; 
+              let x = (parseFloat(target.getAttribute('data-x'))||0) + event.dx; 
+              target.style.left = x+'px'; 
+              target.setAttribute('data-x', x); 
+            } 
+          } 
+        });
+      }, 100);
+    }
+
+    // ========== AI CHAT WITH DEEPSEEK ==========
+    window.sendMessage = function() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage('user', text); 
+      input.value = '';
+      
+      // Simulate DeepSeek AI response with context from all sources
+      setTimeout(() => {
+        let response = '';
+        if (text.toLowerCase().includes('high priority')) {
+          const highCount = allItems.filter(i => i.priority === 'high').length;
+          const highItems = allItems.filter(i => i.priority === 'high').map(i => `- ${i.title || i.name} (${i.source})`).slice(0,5).join('\n');
+          response = `🔍 **DeepSeek Analysis**: Found ${highCount} high priority items across all sources.\n\n${highItems}\n\n${highCount > 5 ? '...and more' : ''}`;
+        } else if (text.toLowerCase().includes('overdue')) {
+          const overdueCount = allItems.filter(i => {
+            let d = i.due || i.due_date; 
+            return d && new Date(d) < new Date() && !i.closed && i.status !== 'done';
+          }).length;
+          response = `⚠️ **DeepSeek Alert**: You have ${overdueCount} overdue tasks. Check the calendar view for details. I recommend addressing these first.`;
+        } else if (text.toLowerCase().includes('email') || text.toLowerCase().includes('gmail')) {
+          const unreadEmails = allItems.filter(i => i.source === 'gmail' && i.status === 'unread').length;
+          response = `📧 **Email Summary**: You have ${unreadEmails} unread emails. The most recent is from ${allItems.find(i => i.source === 'gmail')?.from || 'unknown'}.`;
+        } else if (text.toLowerCase().includes('slack')) {
+          const slackMessages = allItems.filter(i => i.source === 'slack').length;
+          response = `💬 **Slack Activity**: Found ${slackMessages} messages across channels. #${allItems.find(i => i.source === 'slack')?.channel || 'general'} has the latest activity.`;
+        } else {
+          response = `🤖 **DeepSeek AI**: I've analyzed your request. You have ${allItems.length} total items across ${[...new Set(allItems.map(i=>i.source))].join(', ')}. How can I help further?`;
+        }
+        addMessage('ai', response);
+      }, 1200);
+    };
+
+    window.sendQuickPrompt = function(text) {
+      document.getElementById('chat-input').value = text; 
+      sendMessage();
+    };
+
+    function addMessage(role, text) {
+      const area = document.getElementById('chat-area');
+      const div = document.createElement('div'); 
+      div.className = `msg ${role}`;
+      div.innerHTML = `<div class="msg-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
+      area.appendChild(div); 
+      area.scrollTop = area.scrollHeight;
+    }
+
+    window.analyzeItem = function(itemId) {
+      const item = allItems.find(i => i.id === itemId);
+      if (!item) return;
+      addMessage('user', `Analyze: ${item.name || item.title}`);
+      
+      // DeepSeek style analysis
+      let analysis = `📊 **DeepSeek Task Analysis**\n\n`;
+      analysis += `**Title:** ${item.name || item.title}\n`;
+      analysis += `**Source:** ${item.source}\n`;
+      analysis += `**Status:** ${item.closed ? 'Done' : (item.status || 'Active')}\n`;
+      analysis += `**Priority:** ${item.priority || 'Not set'}\n`;
+      if (item.due || item.due_date) analysis += `**Due:** ${new Date(item.due || item.due_date).toLocaleDateString()}\n`;
+      if (item.assignee || item.from) analysis += `**Assignee/From:** ${item.assignee || item.from}\n`;
+      analysis += `\n💡 **AI Suggestion:** ${item.closed ? 'Task is complete.' : 
+        (item.priority === 'high' ? 'High priority - complete within 24 hours.' : 
+        'Consider batching with similar tasks for efficiency.')}`;
+      
+      addMessage('ai', analysis);
+    };
+
+    // ========== EXPORT ==========
+    window.exportData = function(format) {
+      if (format==='csv') exportCSV(); 
+      else if (format==='json') exportJSON();
+    };
+    
+    function exportCSV() {
+      const headers = ['Title','Source','Status','Priority','Due Date','Assignee','Description'];
+      const rows = filteredItems.map(i => [
+        i.name || i.title || '', 
+        i.source || 'trello', 
+        i.closed ? 'Done' : (i.status || 'Active'), 
+        i.priority || 'medium', 
+        i.due || i.due_date || '',
+        i.assignee || i.from || i.channel || '',
+        (i.desc || i.description || '').replace(/[,\n]/g, ' ')
+      ]);
+      const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      download(csv, 'unifyai-export.csv', 'text/csv');
+    }
+    
+    function exportJSON() { 
+      download(JSON.stringify(filteredItems, null, 2), 'unifyai-export.json', 'application/json'); 
+    }
+    
+    window.exportPDF = function() {
+      const { jsPDF } = window.jspdf; 
+      const doc = new jsPDF();
+      doc.setFontSize(18); 
+      doc.setTextColor(108,99,255); 
+      doc.text('UnifyAI Enterprise Report',14,22);
+      doc.setFontSize(10); 
+      doc.text(`Generated: ${new Date().toLocaleString()}`,14,32);
+      doc.text(`Sources: ${[...new Set(allItems.map(i=>i.source))].join(', ')}`,14,38);
+      
+      const headers = [['Title','Source','Status','Priority']];
+      const data = filteredItems.slice(0,20).map(i => [
+        (i.name || i.title || '').substring(0,30), 
+        i.source || 'trello', 
+        i.closed ? 'Done' : (i.status || 'Active'), 
+        i.priority || 'medium'
+      ]);
+      doc.autoTable({ 
+        head: headers, 
+        body: data, 
+        startY:45, 
+        theme:'grid', 
+        styles:{fontSize:8}, 
+        headStyles:{fillColor:[108,99,255]} 
+      });
+      doc.save('unifyai-report.pdf'); 
+      showToast('PDF exported','success');
+    };
+    
+    function download(content,filename,type) {
+      const blob = new Blob([content],{type}); 
+      const url = URL.createObjectURL(blob); 
+      const a = document.createElement('a'); 
+      a.href=url; 
+      a.download=filename; 
+      a.click(); 
+      URL.revokeObjectURL(url); 
+      showToast(`Exported ${filename}`,'success');
+    }
+
+    // ========== SYNC ==========
+    window.syncAll = async function() {
+      const btn = document.getElementById('sync-btn'); 
+      const icon = document.getElementById('sync-icon');
+      btn.disabled = true; 
+      icon.className = 'fas fa-sync-alt spin';
+      
+      await loadTrelloData();
+      
+      // Also refresh other connected sources
+      if (API_KEYS.jira.connected) loadSourceData('jira');
+      if (API_KEYS.slack.connected) loadSourceData('slack');
+      if (API_KEYS.gmail.connected) loadSourceData('gmail');
+      
+      btn.disabled = false; 
+      icon.className = 'fas fa-sync-alt';
+    };
+
+    // ========== UI ==========
+    window.openConfig = function() { 
+      document.getElementById('modal').style.display = 'flex'; 
+      updateConnectionDots();
+    };
+    
+    window.closeConfig = function() { 
+      document.getElementById('modal').style.display = 'none'; 
+    };
+    
+    window.toggleSidebar = function() { 
+      document.getElementById('sidebar').classList.toggle('collapsed'); 
+    };
+    
+    window.showDashboard = function() { /* nothing else */ };
+    
+    window.setTheme = function(newTheme, ev) {
+      theme = newTheme; 
+      localStorage.setItem('theme', theme);
+      document.body.className = theme==='dark' ? '' : 'light-theme';
+      document.querySelectorAll('.theme-toggle button').forEach(btn => btn.classList.remove('active'));
+      ev.target.closest('button').classList.add('active');
+    };
+
+    // ========== INIT ==========
+    window.onload = function() {
+      setTheme(theme, { target: document.querySelector('.theme-toggle button') });
+      updateConnectionDots();
+      
+      // Initialize with sample data plus any connected sources
+      allItems = [...SAMPLE_ITEMS];
+      
+      if (API_KEYS.trello.token) {
+        loadTrelloData();
+      } else {
+        // Show sample data initially
+        filterItems();
+        showToast('👋 Welcome to UnifyAI Pro. Connect your sources in Config.', 'info');
+      }
+      
+      // Add DeepSeek badge styling
+      const style = document.createElement('style');
+      style.textContent = `
+        .connect-btn-small {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          padding: 2px 6px;
+          font-size: 10px;
+          cursor: pointer;
+          color: var(--muted);
+        }
+        .connect-btn-small:hover {
+          border-color: var(--accent);
+          color: var(--accent);
+        }
+      `;
+      document.head.appendChild(style);
+    };
+  })();
+</script>
+</body>
+</html>

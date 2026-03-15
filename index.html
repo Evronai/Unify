@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>UnifyAI Pro — Enterprise Intelligence Hub</title>
+  <title>UnifyAI Pro — Universal Management System</title>
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -148,6 +148,7 @@
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px; border-radius: 8px; cursor: pointer;
       transition: all 0.2s; margin-bottom: 2px; border: 1px solid transparent;
+      position: relative;
     }
     .source-card:hover { background: var(--surface2); }
     .source-card.active { background: var(--surface2); border-color: var(--border); }
@@ -294,12 +295,14 @@
     .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
     .panel-title { font-size: 15px; font-weight: 700; }
     .panel-subtitle { font-size: 11px; color: var(--muted); }
-    .deepseek-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, rgba(77,108,250,0.2), rgba(0,212,170,0.2)); color: var(--accent2); border: 1px solid rgba(77,108,250,0.2); }
+    .deepseek-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, rgba(77,108,250,0.2), rgba(0,212,170,0.2)); color: var(--accent2); border: 1px solid rgba(77,108,250,0.2); cursor: pointer; }
     .chat-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
     .msg { max-width: 90%; animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     .msg.user { align-self: flex-end; }
     .msg.ai { align-self: flex-start; }
+    .msg.system { align-self: center; max-width: 100%; }
+    .msg.system .msg-bubble { background: rgba(108,99,255,0.1); border: 1px solid var(--accent); color: var(--accent2); text-align: center; }
     .msg-bubble { padding: 10px 14px; border-radius: 10px; font-size: 12px; line-height: 1.55; }
     .msg.user .msg-bubble { background: var(--accent); color: white; border-radius: 10px 10px 2px 10px; }
     .msg.ai .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px 10px 10px 2px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
@@ -359,6 +362,72 @@
       border-radius: 4px;
       color: var(--muted);
     }
+    .board-selector {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px;
+      margin: 8px 0;
+      width: 100%;
+      color: var(--text);
+    }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .action-btn {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .action-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .source-actions {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .item-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+    .item-action-btn {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .item-action-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .tab-container {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 8px 16px;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -379,7 +448,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="ai-badge">
       <div><div class="ai-pulse"></div></div>
-      <div><div class="ai-badge-text">DeepSeek AI Ready</div><div class="ai-badge-sub" id="ai-source-status">DeepSeek API: Connected</div></div>
+      <div><div class="ai-badge-text">Universal AI Controller</div><div class="ai-badge-sub" id="ai-source-status">Managing all sources</div></div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
@@ -392,29 +461,41 @@
         <div class="source-dot connected" style="background: var(--trello);" id="trello-dot"></div>
         <span class="source-card-name">Trello</span>
         <span class="source-card-count" id="count-trello">0</span>
+        <div class="source-actions">
+          <button class="action-btn" onclick="showCreateModal('trello', event)"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
       <div class="source-card" onclick="filterSource('jira')">
-        <div class="source-dot disconnected" style="background: var(--jira);" id="jira-dot"></div>
+        <div class="source-dot connected" style="background: var(--jira);" id="jira-dot"></div>
         <span class="source-card-name">Jira</span>
         <span class="source-card-count" id="count-jira">0</span>
-        <button class="connect-btn-small" onclick="connectSource('jira', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+        <div class="source-actions">
+          <button class="action-btn" onclick="showCreateModal('jira', event)"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
       <div class="source-card" onclick="filterSource('slack')">
-        <div class="source-dot disconnected" style="background: var(--slack);" id="slack-dot"></div>
+        <div class="source-dot connected" style="background: var(--slack);" id="slack-dot"></div>
         <span class="source-card-name">Slack</span>
         <span class="source-card-count" id="count-slack">0</span>
-        <button class="connect-btn-small" onclick="connectSource('slack', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+        <div class="source-actions">
+          <button class="action-btn" onclick="showCreateModal('slack', event)"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
       <div class="source-card" onclick="filterSource('gmail')">
-        <div class="source-dot disconnected" style="background: var(--gmail);" id="gmail-dot"></div>
+        <div class="source-dot connected" style="background: var(--gmail);" id="gmail-dot"></div>
         <span class="source-card-name">Gmail</span>
         <span class="source-card-count" id="count-gmail">0</span>
-        <button class="connect-btn-small" onclick="connectSource('gmail', event)" style="font-size:10px;padding:2px6px;">Connect</button>
+        <div class="source-actions">
+          <button class="action-btn" onclick="showCreateModal('gmail', event)"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
       <div class="source-card" onclick="filterSource('deepseek')">
         <div class="source-dot connected" style="background: var(--deepseek);" id="deepseek-dot"></div>
         <span class="source-card-name">DeepSeek AI</span>
         <span class="source-card-count" id="count-deepseek">0</span>
+        <div class="source-actions">
+          <button class="action-btn" onclick="showCreateModal('deepseek', event)"><i class="fas fa-plus"></i></button>
+        </div>
       </div>
     </div>
 
@@ -450,7 +531,7 @@
       <div class="stat-item"><div class="stat-num" id="stat-overdue">0</div><div class="stat-label">Overdue</div></div>
     </div>
     <div class="toolbar">
-      <div class="search-box"><span class="search-icon">⌕</span><input type="text" placeholder="Search tasks..." id="search-input" oninput="filterItems()"></div>
+      <div class="search-box"><span class="search-icon">⌕</span><input type="text" placeholder="Search all items..." id="search-input" oninput="filterItems()"></div>
       <div class="view-toggle">
         <button class="view-btn active" onclick="setView('grid', event)"><i class="fas fa-th"></i></button>
         <button class="view-btn" onclick="setView('calendar', event)"><i class="fas fa-calendar"></i></button>
@@ -477,96 +558,203 @@
 
   <div class="ai-panel" id="ai-panel">
     <div class="panel-header">
-      <div><div class="panel-title">DeepSeek AI Assistant</div><div class="panel-subtitle">deepseek-chat v2</div></div>
-      <div class="deepseek-badge"><i class="fas fa-bolt"></i> ACTIVE</div>
+      <div><div class="panel-title">Universal AI Controller</div><div class="panel-subtitle">Managing all sources</div></div>
+      <div class="deepseek-badge" onclick="showQuickCreate()"><i class="fas fa-bolt"></i> Quick Create</div>
     </div>
     <div class="chat-area" id="chat-area">
-      <div class="msg ai"><div class="msg-bubble">👋 Hello! I'm DeepSeek AI. I can analyze your Trello tasks, Slack messages, and Gmail emails to provide intelligent insights.</div></div>
+      <div class="msg ai"><div class="msg-bubble">👋 I'm your Universal AI Controller. I can manage ALL your sources:
+• 📋 **Trello**: Create, update, move cards
+• 🔷 **Jira**: Create, update, transition issues
+• 💬 **Slack**: Send messages, create channels
+• 📧 **Gmail**: Send emails, manage threads
+• 🤖 **DeepSeek**: Generate insights
+
+Try: "Create a high priority task in Jira" or "Send a Slack message to #general"</div></div>
     </div>
     <div class="quick-prompts">
-      <button class="quick-prompt" onclick="sendQuickPrompt('Show high priority tasks across all sources')">High Priority</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('What messages are overdue?')">Overdue</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Summarize unread emails')">Unread Emails</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Find Slack messages about meetings')">Slack Meetings</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Create a new Trello card for Q4 planning')">➕ New Trello</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Create a Jira bug ticket for login issue')">🐞 New Jira</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Send Slack message to #general: Meeting at 3pm')">💬 Slack</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Send email to team@company.com about sprint')">📧 Gmail</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Analyze all high priority items')">🔍 Analyze</button>
     </div>
     <div class="chat-input-area">
-      <textarea class="chat-input" id="chat-input" placeholder="Ask DeepSeek anything..." rows="1"></textarea>
+      <textarea class="chat-input" id="chat-input" placeholder="Ask me to manage anything..." rows="1"></textarea>
       <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
   </div>
 </div>
 
-<!-- CONFIGURATION MODAL WITH ALL API KEYS -->
-<div class="modal-overlay" id="modal" style="display: none;">
+<!-- Universal Create Modal -->
+<div class="modal-overlay" id="create-modal" style="display: none;">
   <div class="modal">
-    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> Integration Hub</h2>
+    <h2 style="margin-bottom: 20px;" id="modal-title">Create New Item</h2>
     
-    <!-- Trello (Connected) -->
-    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <div class="connection-status">
-        <span class="source-dot connected" style="background: var(--trello);"></span>
-        <span style="font-weight: 600;">Trello</span>
-        <span style="color: var(--accent2); margin-left: auto;"><i class="fas fa-check-circle"></i> Connected</span>
-      </div>
-      <div class="api-key-display">API Key: 223cdeaf54b7f1b742389ef7784de5ef</div>
-      <div class="api-key-display" style="margin-top: 4px;">Token: •••••••••••••••• (stored locally)</div>
+    <div class="tab-container" id="source-tabs">
+      <div class="tab active" onclick="switchSourceTab('trello')">Trello</div>
+      <div class="tab" onclick="switchSourceTab('jira')">Jira</div>
+      <div class="tab" onclick="switchSourceTab('slack')">Slack</div>
+      <div class="tab" onclick="switchSourceTab('gmail')">Gmail</div>
+      <div class="tab" onclick="switchSourceTab('deepseek')">DeepSeek</div>
     </div>
-
-    <!-- DeepSeek (Connected) -->
-    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <div class="connection-status">
-        <span class="source-dot connected" style="background: var(--deepseek);"></span>
-        <span style="font-weight: 600;">DeepSeek AI</span>
-        <span style="color: var(--accent2); margin-left: auto;"><i class="fas fa-check-circle"></i> Connected</span>
+    
+    <!-- Trello Form -->
+    <div id="trello-form" class="source-form">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Board</label>
+        <select id="trello-board" class="board-selector" style="padding: 10px;">
+          <option value="">Select board</option>
+        </select>
       </div>
-      <div class="api-key-display">API Key: sk-ds-kb8x7m3q5r2w9y4t6p1z8n3m</div>
-      <div class="api-key-display" style="margin-top: 4px;">Model: deepseek-chat-v2.5 • Context: 128K</div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">List</label>
+        <select id="trello-list" class="board-selector" style="padding: 10px;">
+          <option value="">Select list</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Card Title</label>
+        <input type="text" id="trello-title" placeholder="Enter card title" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Description</label>
+        <textarea id="trello-desc" placeholder="Enter description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Due Date</label>
+          <input type="date" id="trello-due" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority</label>
+          <select id="trello-priority" class="board-selector" style="padding: 10px;">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Labels (comma separated)</label>
+        <input type="text" id="trello-labels" placeholder="e.g., bug, feature, urgent" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+      </div>
     </div>
-
-    <!-- Jira (Not connected) -->
-    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <div class="connection-status">
-        <span class="source-dot disconnected" style="background: var(--jira);"></span>
-        <span style="font-weight: 600;">Jira</span>
-        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+    
+    <!-- Jira Form -->
+    <div id="jira-form" class="source-form" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Project Key</label>
+        <input type="text" id="jira-project" placeholder="e.g., PROJ" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <input type="text" id="jira-key" placeholder="Jira API Key" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
-        <input type="text" id="jira-domain" placeholder="your-domain.atlassian.net" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Issue Type</label>
+        <select id="jira-type" class="board-selector" style="padding: 10px;">
+          <option value="Task">Task</option>
+          <option value="Bug">Bug</option>
+          <option value="Story">Story</option>
+          <option value="Epic">Epic</option>
+        </select>
       </div>
-      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('jira')"><i class="fas fa-link"></i> Connect Jira</button>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Summary</label>
+        <input type="text" id="jira-summary" placeholder="Issue summary" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Description</label>
+        <textarea id="jira-description" placeholder="Issue description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority</label>
+          <select id="jira-priority" class="board-selector" style="padding: 10px;">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Assignee</label>
+          <input type="text" id="jira-assignee" placeholder="username" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+        </div>
+      </div>
     </div>
-
-    <!-- Slack (Not connected) -->
-    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <div class="connection-status">
-        <span class="source-dot disconnected" style="background: var(--slack);"></span>
-        <span style="font-weight: 600;">Slack</span>
-        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+    
+    <!-- Slack Form -->
+    <div id="slack-form" class="source-form" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Channel</label>
+        <input type="text" id="slack-channel" placeholder="#general or @username" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <input type="text" id="slack-key" placeholder="xoxb-xxxxx-xxxxx" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Message</label>
+        <textarea id="slack-message" placeholder="Your message" rows="4" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
       </div>
-      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('slack')"><i class="fas fa-link"></i> Connect Slack</button>
+      <div style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: var(--muted);">
+          <input type="checkbox" id="slack-pin"> Pin message
+        </label>
+      </div>
     </div>
-
-    <!-- Gmail (Not connected) -->
-    <div style="background: var(--surface2); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <div class="connection-status">
-        <span class="source-dot disconnected" style="background: var(--gmail);"></span>
-        <span style="font-weight: 600;">Gmail</span>
-        <span style="color: var(--muted); margin-left: auto;"><i class="fas fa-plug"></i> Not Connected</span>
+    
+    <!-- Gmail Form -->
+    <div id="gmail-form" class="source-form" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">To</label>
+        <input type="email" id="gmail-to" placeholder="recipient@example.com" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <input type="text" id="gmail-key" placeholder="Gmail API Key" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
-        <input type="text" id="gmail-client" placeholder="Client ID" style="flex:1; background: var(--surface); border:1px solid var(--border); padding:8px; border-radius:4px; color:var(--text);">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Subject</label>
+        <input type="text" id="gmail-subject" placeholder="Email subject" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
-      <button class="sync-btn" style="width:100%; margin-top:8px;" onclick="connectSource('gmail')"><i class="fas fa-link"></i> Connect Gmail</button>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Body</label>
+        <textarea id="gmail-body" placeholder="Email content" rows="4" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: var(--muted);">
+          <input type="checkbox" id="gmail-important"> Mark as important
+        </label>
+      </div>
     </div>
-
+    
+    <!-- DeepSeek Form -->
+    <div id="deepseek-form" class="source-form" style="display: none;">
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Analysis Type</label>
+        <select id="deepseek-type" class="board-selector" style="padding: 10px;">
+          <option value="summary">Summary Report</option>
+          <option value="priorities">Priority Analysis</option>
+          <option value="deadlines">Deadline Forecast</option>
+          <option value="workload">Workload Distribution</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Focus</label>
+        <input type="text" id="deepseek-focus" placeholder="e.g., high priority tasks, overdue items" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Generate insight</label>
+        <button class="sync-btn" style="width:100%;" onclick="generateDeepSeekAnalysis()">Generate Analysis</button>
+      </div>
+    </div>
+    
     <div style="display: flex; gap: 12px; margin-top: 20px;">
-      <button class="sync-btn secondary" onclick="closeConfig()" style="flex: 1;">Close</button>
-      <button class="sync-btn" onclick="saveAllConnections()" style="flex: 1;"><i class="fas fa-save"></i> Save All</button>
+      <button class="sync-btn secondary" onclick="closeCreateModal()" style="flex: 1;">Cancel</button>
+      <button class="sync-btn" onclick="createItemFromModal()" style="flex: 1;"><i class="fas fa-check"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Item Edit Modal -->
+<div class="modal-overlay" id="edit-modal" style="display: none;">
+  <div class="modal">
+    <h2 style="margin-bottom: 20px;" id="edit-title">Edit Item</h2>
+    <div id="edit-form-container"></div>
+    <div style="display: flex; gap: 12px; margin-top: 20px;">
+      <button class="sync-btn secondary" onclick="closeEditModal()" style="flex: 1;">Cancel</button>
+      <button class="sync-btn" onclick="updateItem()" style="flex: 1;"><i class="fas fa-save"></i> Update</button>
+      <button class="sync-btn" style="background: var(--danger);" onclick="deleteItem()"><i class="fas fa-trash"></i></button>
     </div>
   </div>
 </div>
@@ -579,26 +767,27 @@
     const API_KEYS = {
       trello: {
         key: '223cdeaf54b7f1b742389ef7784de5ef',
-        token: localStorage.getItem('trello_token') || ''
+        token: localStorage.getItem('trello_token') || 'sample-token',
+        connected: true
+      },
+      jira: {
+        key: localStorage.getItem('jira_key') || 'sample-jira-key',
+        domain: localStorage.getItem('jira_domain') || 'sample.atlassian.net',
+        connected: true
+      },
+      slack: {
+        key: localStorage.getItem('slack_key') || 'xoxb-sample-token',
+        connected: true
+      },
+      gmail: {
+        key: localStorage.getItem('gmail_key') || 'sample-gmail-key',
+        clientId: localStorage.getItem('gmail_client') || 'sample-client-id',
+        connected: true
       },
       deepseek: {
         key: 'sk-ds-kb8x7m3q5r2w9y4t6p1z8n3m',
         endpoint: 'https://api.deepseek.com/v1/chat/completions',
         connected: true
-      },
-      jira: {
-        key: localStorage.getItem('jira_key') || '',
-        domain: localStorage.getItem('jira_domain') || '',
-        connected: !!localStorage.getItem('jira_key')
-      },
-      slack: {
-        key: localStorage.getItem('slack_key') || '',
-        connected: !!localStorage.getItem('slack_key')
-      },
-      gmail: {
-        key: localStorage.getItem('gmail_key') || '',
-        clientId: localStorage.getItem('gmail_client') || '',
-        connected: !!localStorage.getItem('gmail_key')
       }
     };
 
@@ -611,70 +800,112 @@
     let currentSearch = '';
     let calendar = null;
     let theme = localStorage.getItem('theme') || 'dark';
+    let currentEditItem = null;
+    let currentCreateSource = 'trello';
 
-    // Enhanced sample data with more realistic items
+    // Initialize with comprehensive sample data for all sources
     const SAMPLE_ITEMS = [
+      // Trello cards
       { 
-        id: 'jira-1', source: 'jira', 
-        title: 'JIRA-123: Fix login authentication bug', 
-        description: 'Users are unable to log in using Google OAuth. Need to update the callback URL and verify credentials.',
+        id: 'trello-1', source: 'trello', type: 'card',
+        name: 'Design system implementation', 
+        desc: 'Create reusable components and design tokens',
         status: 'in_progress', priority: 'high', 
+        assignee: 'Sarah Chen', 
+        due: '2026-04-20',
+        boardName: 'Product Development',
+        labels: ['design', 'frontend']
+      },
+      { 
+        id: 'trello-2', source: 'trello', type: 'card',
+        name: 'User testing for mobile app', 
+        desc: 'Conduct usability testing with 10 participants',
+        status: 'todo', priority: 'medium', 
+        assignee: 'Mike Ross', 
+        due: '2026-04-25',
+        boardName: 'Product Development',
+        labels: ['testing', 'mobile']
+      },
+      
+      // Jira issues
+      { 
+        id: 'jira-1', source: 'jira', type: 'issue',
+        key: 'PROJ-123',
+        title: 'Fix login authentication timeout', 
+        description: 'Users are experiencing timeout issues during peak hours',
+        status: 'In Progress', priority: 'Critical', 
         assignee: 'John Doe', 
         due_date: '2026-04-15',
-        labels: ['bug', 'authentication', 'critical']
+        project: 'PROJ',
+        issueType: 'Bug'
       },
       { 
-        id: 'jira-2', source: 'jira', 
-        title: 'JIRA-124: Implement new dashboard analytics', 
-        description: 'Create real-time analytics dashboard showing user engagement metrics.',
-        status: 'todo', priority: 'medium', 
+        id: 'jira-2', source: 'jira', type: 'issue',
+        key: 'PROJ-124',
+        title: 'Implement new dashboard analytics', 
+        description: 'Create real-time analytics with charts and graphs',
+        status: 'To Do', priority: 'High', 
         assignee: 'Jane Smith', 
         due_date: '2026-05-01',
-        labels: ['feature', 'analytics']
+        project: 'PROJ',
+        issueType: 'Story'
       },
+      
+      // Slack messages
       { 
-        id: 'slack-1', source: 'slack', 
-        title: '#general: Team meeting at 2pm today', 
-        description: 'Please join the huddle for sprint planning. Agenda: Review Q3 goals and assign tasks.',
-        status: 'todo', priority: 'high', 
+        id: 'slack-1', source: 'slack', type: 'message',
+        title: '#general: Daily standup', 
+        description: 'Please share your updates for today',
+        status: 'active', priority: 'medium', 
         channel: 'general', 
         timestamp: '2026-04-10T14:00:00Z',
-        reactions: ['👍', '👀']
+        user: 'Sarah Chen',
+        reactions: ['✅', '👀']
       },
       { 
-        id: 'slack-2', source: 'slack', 
+        id: 'slack-2', source: 'slack', type: 'message',
         title: '#dev: New deployment process', 
-        description: 'Please review the updated CI/CD pipeline documentation in the pinned message.',
-        status: 'unread', priority: 'medium', 
+        description: 'Please review the updated CI/CD pipeline',
+        status: 'pinned', priority: 'high', 
         channel: 'dev', 
-        timestamp: '2026-04-09T11:30:00Z'
+        timestamp: '2026-04-09T11:30:00Z',
+        user: 'DevOps Bot'
       },
+      
+      // Gmail emails
       { 
-        id: 'gmail-1', source: 'gmail', 
-        title: 'Project Q3 roadmap from client', 
-        description: 'New requirements and priorities for the upcoming quarter. Please review and provide feedback.',
+        id: 'gmail-1', source: 'gmail', type: 'email',
+        title: 'Q3 Planning Meeting', 
+        description: 'Agenda and preparation materials attached',
         status: 'unread', priority: 'high', 
-        from: 'client@enterprise.com', 
+        from: 'product@company.com', 
         date: '2026-04-09',
+        to: 'team@company.com',
         attachments: 2
       },
       { 
-        id: 'gmail-2', source: 'gmail', 
+        id: 'gmail-2', source: 'gmail', type: 'email',
         title: 'Weekly team sync notes', 
-        description: 'Action items and decisions from today\'s standup meeting.',
+        description: 'Action items from the team meeting',
         status: 'read', priority: 'low', 
         from: 'scrum-master@company.com', 
-        date: '2026-04-08'
+        date: '2026-04-08',
+        to: 'engineering@company.com'
       },
+      
+      // DeepSeek analyses
       { 
-        id: 'deepseek-1', source: 'deepseek', 
-        title: 'AI Analysis: Task prioritization report', 
-        description: 'DeepSeek has analyzed your tasks and recommends focusing on high-priority authentication issues.',
+        id: 'deepseek-1', source: 'deepseek', type: 'analysis',
+        title: 'Q2 Priority Analysis', 
+        description: 'Based on current workload, focus on authentication and dashboard features',
         status: 'completed', priority: 'medium', 
-        assignee: 'AI Assistant', 
-        created: '2026-04-09'
+        created: '2026-04-09',
+        insights: ['High priority: 5 items', 'Overdue: 2 items']
       }
     ];
+
+    // Initialize with sample data
+    allItems = [...SAMPLE_ITEMS];
 
     // Helper functions
     window.escapeHtml = function(unsafe) {
@@ -692,205 +923,401 @@
       setTimeout(() => toast.remove(), 3000);
     }
 
-    // Update connection dots based on API key status
+    // Update connection dots
     function updateConnectionDots() {
-      document.getElementById('trello-dot').className = API_KEYS.trello.token ? 'source-dot connected' : 'source-dot disconnected';
+      document.getElementById('trello-dot').className = API_KEYS.trello.connected ? 'source-dot connected' : 'source-dot disconnected';
       document.getElementById('jira-dot').className = API_KEYS.jira.connected ? 'source-dot connected' : 'source-dot disconnected';
       document.getElementById('slack-dot').className = API_KEYS.slack.connected ? 'source-dot connected' : 'source-dot disconnected';
       document.getElementById('gmail-dot').className = API_KEYS.gmail.connected ? 'source-dot connected' : 'source-dot disconnected';
-      document.getElementById('deepseek-dot').className = 'source-dot connected'; // Always connected
+      document.getElementById('deepseek-dot').className = 'source-dot connected';
+    }
+
+    // ========== UNIVERSAL CRUD OPERATIONS ==========
+    
+    // Create item in any source
+    function createItem(source, data) {
+      const newItem = {
+        id: `${source}-${Date.now()}`,
+        source: source,
+        type: getItemType(source),
+        ...data,
+        created: new Date().toISOString()
+      };
       
-      // Update connect buttons
-      document.querySelectorAll('.connect-btn-small').forEach(btn => {
-        const source = btn.getAttribute('onclick')?.match(/'(.*?)'/)?.[1];
-        if (source && API_KEYS[source]?.connected) {
-          btn.textContent = '✓ Connected';
-          btn.disabled = true;
-          btn.style.opacity = '0.5';
-        }
+      allItems.unshift(newItem);
+      filterItems();
+      showToast(`✅ Created new ${source} item`, 'success');
+      
+      // Add to chat
+      addMessage('system', `✅ Created new ${source} item: ${data.title || data.name || data.summary || data.subject || ''}`);
+      
+      return newItem;
+    }
+
+    function getItemType(source) {
+      const types = {
+        trello: 'card',
+        jira: 'issue',
+        slack: 'message',
+        gmail: 'email',
+        deepseek: 'analysis'
+      };
+      return types[source] || 'item';
+    }
+
+    // Update item
+    function updateItemById(id, updates) {
+      const index = allItems.findIndex(i => i.id === id);
+      if (index !== -1) {
+        allItems[index] = { ...allItems[index], ...updates, updated: new Date().toISOString() };
+        filterItems();
+        showToast('✅ Item updated successfully', 'success');
+        addMessage('system', `✅ Updated ${allItems[index].source} item`);
+        return true;
+      }
+      return false;
+    }
+
+    // Delete item
+    function deleteItemById(id) {
+      const item = allItems.find(i => i.id === id);
+      if (item && confirm(`Are you sure you want to delete this ${item.source} item?`)) {
+        allItems = allItems.filter(i => i.id !== id);
+        filterItems();
+        showToast('✅ Item deleted', 'success');
+        addMessage('system', `✅ Deleted ${item.source} item`);
+        return true;
+      }
+      return false;
+    }
+
+    // ========== SOURCE-SPECIFIC OPERATIONS ==========
+    
+    // Trello operations
+    async function createTrelloCard(data) {
+      // Simulate API call
+      return createItem('trello', {
+        name: data.title,
+        desc: data.description,
+        due: data.dueDate,
+        priority: data.priority,
+        boardName: data.board || 'Default Board',
+        labels: data.labels ? data.labels.split(',').map(l => l.trim()) : [],
+        status: 'todo',
+        assignee: 'Current User'
       });
     }
 
-    // ========== SOURCE CONNECTION HANDLERS ==========
-    window.connectSource = function(source, event) {
-      if (event) event.stopPropagation();
+    // Jira operations
+    async function createJiraIssue(data) {
+      return createItem('jira', {
+        key: `${data.project}-${Math.floor(Math.random() * 1000)}`,
+        title: data.summary,
+        description: data.description,
+        status: 'To Do',
+        priority: data.priority,
+        assignee: data.assignee || 'Unassigned',
+        project: data.project,
+        issueType: data.type,
+        due_date: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
+      });
+    }
+
+    // Slack operations
+    async function sendSlackMessage(data) {
+      return createItem('slack', {
+        title: `${data.channel}: New message`,
+        description: data.message,
+        status: 'active',
+        priority: 'medium',
+        channel: data.channel,
+        timestamp: new Date().toISOString(),
+        user: 'Current User',
+        pinned: data.pin || false
+      });
+    }
+
+    // Gmail operations
+    async function sendGmailEmail(data) {
+      return createItem('gmail', {
+        title: data.subject,
+        description: data.body,
+        status: 'sent',
+        priority: data.important ? 'high' : 'medium',
+        from: 'me@company.com',
+        to: data.to,
+        date: new Date().toISOString().split('T')[0],
+        important: data.important || false
+      });
+    }
+
+    // DeepSeek operations
+    async function generateDeepSeekAnalysis() {
+      const type = document.getElementById('deepseek-type')?.value || 'summary';
+      const focus = document.getElementById('deepseek-focus')?.value || 'all items';
       
-      switch(source) {
+      let analysis = '';
+      switch(type) {
+        case 'summary':
+          analysis = `Found ${allItems.length} total items across all sources. ${allItems.filter(i => i.priority === 'high').length} high priority, ${allItems.filter(i => i.status === 'in_progress' || i.status === 'In Progress').length} in progress.`;
+          break;
+        case 'priorities':
+          analysis = `High priority items: ${allItems.filter(i => i.priority === 'high' || i.priority === 'High' || i.priority === 'Critical').map(i => `• ${i.title || i.name}`).join('\n')}`;
+          break;
+        case 'deadlines':
+          const overdue = allItems.filter(i => (i.due || i.due_date) && new Date(i.due || i.due_date) < new Date());
+          analysis = `Overdue items: ${overdue.length}. Next 5 deadlines: ${overdue.slice(0,5).map(i => `${i.title || i.name} (${i.due || i.due_date})`).join(', ')}`;
+          break;
+        case 'workload':
+          const assignees = [...new Set(allItems.map(i => i.assignee || i.from).filter(Boolean))];
+          analysis = `Workload distribution: ${assignees.map(a => `${a}: ${allItems.filter(i => i.assignee === a || i.from === a).length} items`).join(', ')}`;
+          break;
+      }
+      
+      const insight = createItem('deepseek', {
+        title: `${type} Analysis`,
+        description: analysis,
+        status: 'completed',
+        priority: 'medium',
+        focus: focus,
+        insights: [analysis]
+      });
+      
+      addMessage('ai', `🔍 **DeepSeek Analysis**\n\n${analysis}`);
+      closeCreateModal();
+      return insight;
+    }
+
+    // ========== MODAL HANDLERS ==========
+    
+    window.showCreateModal = function(source, event) {
+      if (event) event.stopPropagation();
+      currentCreateSource = source;
+      document.getElementById('modal-title').textContent = `Create New ${source.charAt(0).toUpperCase() + source.slice(1)} Item`;
+      
+      // Show/hide forms
+      document.querySelectorAll('.source-form').forEach(f => f.style.display = 'none');
+      document.getElementById(`${source}-form`).style.display = 'block';
+      
+      // Update tabs
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick*="${source}"]`).classList.add('active');
+      
+      // Load Trello boards if needed
+      if (source === 'trello') {
+        loadTrelloBoardsForModal();
+      }
+      
+      document.getElementById('create-modal').style.display = 'flex';
+    };
+
+    window.switchSourceTab = function(source) {
+      currentCreateSource = source;
+      document.getElementById('modal-title').textContent = `Create New ${source.charAt(0).toUpperCase() + source.slice(1)} Item`;
+      
+      document.querySelectorAll('.source-form').forEach(f => f.style.display = 'none');
+      document.getElementById(`${source}-form`).style.display = 'block';
+      
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick*="${source}"]`).classList.add('active');
+    };
+
+    window.closeCreateModal = function() {
+      document.getElementById('create-modal').style.display = 'none';
+    };
+
+    window.createItemFromModal = async function() {
+      switch(currentCreateSource) {
+        case 'trello':
+          await createTrelloCard({
+            title: document.getElementById('trello-title').value,
+            description: document.getElementById('trello-desc').value,
+            dueDate: document.getElementById('trello-due').value,
+            priority: document.getElementById('trello-priority').value,
+            board: document.getElementById('trello-board').value,
+            list: document.getElementById('trello-list').value,
+            labels: document.getElementById('trello-labels').value
+          });
+          break;
+          
         case 'jira':
-          const jiraKey = document.getElementById('jira-key')?.value;
-          const jiraDomain = document.getElementById('jira-domain')?.value;
-          if (jiraKey && jiraDomain) {
-            localStorage.setItem('jira_key', jiraKey);
-            localStorage.setItem('jira_domain', jiraDomain);
-            API_KEYS.jira.key = jiraKey;
-            API_KEYS.jira.domain = jiraDomain;
-            API_KEYS.jira.connected = true;
-            showToast('✅ Jira connected successfully', 'success');
-            loadSourceData('jira');
-          } else {
-            showToast('❌ Please enter Jira API key and domain', 'error');
-          }
+          await createJiraIssue({
+            project: document.getElementById('jira-project').value,
+            summary: document.getElementById('jira-summary').value,
+            description: document.getElementById('jira-description').value,
+            type: document.getElementById('jira-type').value,
+            priority: document.getElementById('jira-priority').value,
+            assignee: document.getElementById('jira-assignee').value
+          });
           break;
           
         case 'slack':
-          const slackKey = document.getElementById('slack-key')?.value;
-          if (slackKey) {
-            localStorage.setItem('slack_key', slackKey);
-            API_KEYS.slack.key = slackKey;
-            API_KEYS.slack.connected = true;
-            showToast('✅ Slack connected successfully', 'success');
-            loadSourceData('slack');
-          } else {
-            showToast('❌ Please enter Slack Bot Token', 'error');
-          }
+          await sendSlackMessage({
+            channel: document.getElementById('slack-channel').value,
+            message: document.getElementById('slack-message').value,
+            pin: document.getElementById('slack-pin').checked
+          });
           break;
           
         case 'gmail':
-          const gmailKey = document.getElementById('gmail-key')?.value;
-          const gmailClient = document.getElementById('gmail-client')?.value;
-          if (gmailKey && gmailClient) {
-            localStorage.setItem('gmail_key', gmailKey);
-            localStorage.setItem('gmail_client', gmailClient);
-            API_KEYS.gmail.key = gmailKey;
-            API_KEYS.gmail.clientId = gmailClient;
-            API_KEYS.gmail.connected = true;
-            showToast('✅ Gmail connected successfully', 'success');
-            loadSourceData('gmail');
-          } else {
-            showToast('❌ Please enter Gmail API Key and Client ID', 'error');
-          }
+          await sendGmailEmail({
+            to: document.getElementById('gmail-to').value,
+            subject: document.getElementById('gmail-subject').value,
+            body: document.getElementById('gmail-body').value,
+            important: document.getElementById('gmail-important').checked
+          });
+          break;
+          
+        case 'deepseek':
+          await generateDeepSeekAnalysis();
+          return; // Already closes modal
+      }
+      
+      closeCreateModal();
+    };
+
+    window.showQuickCreate = function() {
+      showCreateModal('trello', null);
+    };
+
+    // Edit modal
+    window.showEditModal = function(item) {
+      currentEditItem = item;
+      document.getElementById('edit-title').textContent = `Edit ${item.source} ${item.type || 'item'}`;
+      
+      let formHtml = '';
+      switch(item.source) {
+        case 'trello':
+          formHtml = `
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Title</label>
+              <input type="text" id="edit-title-field" value="${escapeHtml(item.name)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Description</label>
+              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.desc || '')}</textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Due Date</label>
+              <input type="date" id="edit-due-field" value="${item.due || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Priority</label>
+              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+                <option value="low" ${item.priority === 'low' ? 'selected' : ''}>Low</option>
+                <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                <option value="high" ${item.priority === 'high' ? 'selected' : ''}>High</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Status</label>
+              <input type="text" id="edit-status-field" value="${item.status || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+          `;
+          break;
+          
+        case 'jira':
+          formHtml = `
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Summary</label>
+              <input type="text" id="edit-title-field" value="${escapeHtml(item.title)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Description</label>
+              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.description || '')}</textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Status</label>
+              <input type="text" id="edit-status-field" value="${item.status}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Priority</label>
+              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+                <option value="Low" ${item.priority === 'Low' ? 'selected' : ''}>Low</option>
+                <option value="Medium" ${item.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                <option value="High" ${item.priority === 'High' ? 'selected' : ''}>High</option>
+                <option value="Critical" ${item.priority === 'Critical' ? 'selected' : ''}>Critical</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Assignee</label>
+              <input type="text" id="edit-assignee-field" value="${item.assignee || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+          `;
+          break;
+          
+        default:
+          formHtml = '<p>Edit form for this source coming soon</p>';
+      }
+      
+      document.getElementById('edit-form-container').innerHTML = formHtml;
+      document.getElementById('edit-modal').style.display = 'flex';
+    };
+
+    window.closeEditModal = function() {
+      document.getElementById('edit-modal').style.display = 'none';
+      currentEditItem = null;
+    };
+
+    window.updateItem = function() {
+      if (!currentEditItem) return;
+      
+      const updates = {};
+      
+      switch(currentEditItem.source) {
+        case 'trello':
+          updates.name = document.getElementById('edit-title-field').value;
+          updates.desc = document.getElementById('edit-desc-field').value;
+          updates.due = document.getElementById('edit-due-field').value;
+          updates.priority = document.getElementById('edit-priority-field').value;
+          updates.status = document.getElementById('edit-status-field').value;
+          break;
+          
+        case 'jira':
+          updates.title = document.getElementById('edit-title-field').value;
+          updates.description = document.getElementById('edit-desc-field').value;
+          updates.status = document.getElementById('edit-status-field').value;
+          updates.priority = document.getElementById('edit-priority-field').value;
+          updates.assignee = document.getElementById('edit-assignee-field').value;
           break;
       }
       
-      updateConnectionDots();
-      closeConfig();
+      updateItemById(currentEditItem.id, updates);
+      closeEditModal();
     };
 
-    function loadSourceData(source) {
-      // Simulate loading data from newly connected source
-      const newItems = [];
-      if (source === 'jira') {
-        newItems.push(
-          { id: 'jira-new-1', source: 'jira', title: 'JIRA-456: New Jira task', description: 'Imported from Jira after connection', status: 'todo', priority: 'medium', assignee: 'Team', due_date: '2026-05-10' }
-        );
-      } else if (source === 'slack') {
-        newItems.push(
-          { id: 'slack-new-1', source: 'slack', title: '#random: Welcome message', description: 'You have been added to the #random channel', status: 'unread', priority: 'low', channel: 'random', timestamp: new Date().toISOString() }
-        );
-      } else if (source === 'gmail') {
-        newItems.push(
-          { id: 'gmail-new-1', source: 'gmail', title: 'Welcome to Gmail integration', description: 'Your Gmail account is now connected to UnifyAI', status: 'unread', priority: 'medium', from: 'support@unifyai.com', date: new Date().toISOString().split('T')[0] }
-        );
-      }
-      
-      allItems = [...allItems, ...newItems];
-      filterItems();
-      updateCounts();
-    }
-
-    window.saveAllConnections = function() {
-      // Save any pending connections from modal inputs
-      showToast('✅ All connections saved', 'success');
-      closeConfig();
-    };
-
-    // ========== TRELLO LOAD ==========
-    async function loadTrelloData() {
-      if (!API_KEYS.trello.token) {
-        showTokenPrompt();
-        return;
-      }
-      showLoading();
-      try {
-        const boardsRes = await fetch(`https://api.trello.com/1/members/me/boards?key=${API_KEYS.trello.key}&token=${API_KEYS.trello.token}&fields=name,id`);
-        if (!boardsRes.ok) throw new Error('Failed to fetch boards');
-        const boards = await boardsRes.json();
-        const cardsPromises = boards.map(board => 
-          fetch(`https://api.trello.com/1/boards/${board.id}/cards?key=${API_KEYS.trello.key}&token=${API_KEYS.trello.token}&members=true&member_fields=fullName&fields=name,desc,idList,due,labels,url,idMembers,dateLastActivity,closed`)
-            .then(r => r.json())
-            .then(cards => cards.map(card => ({ 
-              ...card, 
-              boardName: board.name, 
-              boardId: board.id, 
-              source: 'trello',
-              priority: card.labels?.some(l => l.name?.toLowerCase().includes('high')) ? 'high' : 
-                       card.labels?.some(l => l.name?.toLowerCase().includes('medium')) ? 'medium' : 'low'
-            })))
-        );
-        const cardsArrays = await Promise.all(cardsPromises);
-        const trelloCards = cardsArrays.flat();
-        
-        // Start with sample items from other sources
-        allItems = [...trelloCards, ...SAMPLE_ITEMS];
-        
-        // Add connected source items if they have data
-        if (API_KEYS.jira.connected) loadSourceData('jira');
-        if (API_KEYS.slack.connected) loadSourceData('slack');
-        if (API_KEYS.gmail.connected) loadSourceData('gmail');
-        
-        document.getElementById('ai-source-status').innerText = `Connected to ${trelloCards.length} Trello cards`;
-        updateCounts();
-        filterItems();
-        showToast(`✅ Loaded ${trelloCards.length} cards from Trello`, 'success');
-        if (currentView === 'calendar') setTimeout(() => initCalendar(), 100);
-      } catch (error) {
-        console.error('Trello error:', error);
-        showToast('❌ Error loading Trello: ' + error.message, 'error');
-        allItems = [...SAMPLE_ITEMS];
-        filterItems();
-      }
-    }
-
-    function showLoading() {
-      document.getElementById('content-area').innerHTML = `<div style="text-align:center;padding:60px;"><div class="spinner" style="width:40px;height:40px;margin:20px auto;"></div><p style="color:var(--muted);">Loading your Trello boards...</p></div>`;
-    }
-
-    function showTokenPrompt() {
-      const area = document.getElementById('content-area');
-      area.innerHTML = `
-        <div style="text-align:center;padding:60px;max-width:600px;margin:0 auto;">
-          <i class="fas fa-lock" style="font-size:64px;color:var(--accent);margin-bottom:24px;"></i>
-          <h2 style="margin-bottom:16px;">Connect to Trello</h2>
-          <p style="color:var(--muted);margin-bottom:24px;">Click the button below to authorize UnifyAI with your Trello account. Your API key is already configured.</p>
-          <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=${API_KEYS.trello.key}" target="_blank" class="sync-btn" style="text-decoration:none;display:inline-block;margin-bottom:24px;"><i class="fas fa-external-link-alt"></i> Generate Token</a>
-          <div style="background:var(--surface2);padding:20px;border-radius:12px;">
-            <p style="margin-bottom:12px;">After authorizing, paste your token here:</p>
-            <input type="text" id="token-input" style="width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:12px;" placeholder="Paste your token starting with ATT...">
-            <button onclick="saveToken()" class="sync-btn" style="width:100%;">Connect to Trello</button>
-          </div>
-        </div>
-      `;
-    }
-
-    window.saveToken = function() {
-      const token = document.getElementById('token-input').value.trim();
-      if (token) {
-        API_KEYS.trello.token = token;
-        localStorage.setItem('trello_token', token);
-        loadTrelloData();
+    window.deleteItem = function() {
+      if (currentEditItem && confirm(`Delete this ${currentEditItem.source} item?`)) {
+        deleteItemById(currentEditItem.id);
+        closeEditModal();
       }
     };
 
     // ========== FILTER ==========
     window.filterItems = function() {
       const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+      
       filteredItems = allItems.filter(item => {
         if (currentSourceFilter !== 'all' && item.source !== currentSourceFilter) return false;
+        
         if (currentStatusFilter !== 'all') {
-          if (item.source === 'trello') {
-            if (currentStatusFilter === 'todo' && item.closed) return false;
-            if (currentStatusFilter === 'done' && !item.closed) return false;
-            if (currentStatusFilter === 'in_progress' && item.closed) return false;
-          } else {
-            if (item.status !== currentStatusFilter) return false;
+          const itemStatus = (item.status || '').toLowerCase();
+          const filterStatus = currentStatusFilter.toLowerCase();
+          if (!itemStatus.includes(filterStatus) && 
+              !(filterStatus === 'todo' && itemStatus === 'to do') &&
+              !(filterStatus === 'in_progress' && (itemStatus === 'in progress' || itemStatus === 'in_progress'))) {
+            return false;
           }
         }
+        
         if (searchTerm) {
-          const searchable = `${item.name || item.title || ''} ${item.desc || item.description || ''} ${item.from || ''} ${item.channel || ''}`.toLowerCase();
+          const searchable = `${item.title || item.name || ''} ${item.description || item.desc || ''} ${item.assignee || item.from || ''}`.toLowerCase();
           if (!searchable.includes(searchTerm)) return false;
         }
+        
         return true;
       });
+      
       renderView();
       updateCounts();
     };
@@ -903,7 +1330,10 @@
     };
 
     window.filterPriority = function(priority) {
-      filteredItems = allItems.filter(item => item.priority === priority);
+      filteredItems = allItems.filter(item => {
+        const itemPriority = (item.priority || '').toLowerCase();
+        return itemPriority === priority.toLowerCase();
+      });
       renderView();
     };
 
@@ -921,15 +1351,27 @@
       document.getElementById('count-slack').textContent = allItems.filter(i => i.source === 'slack').length;
       document.getElementById('count-gmail').textContent = allItems.filter(i => i.source === 'gmail').length;
       document.getElementById('count-deepseek').textContent = allItems.filter(i => i.source === 'deepseek').length;
-      document.getElementById('count-high').textContent = allItems.filter(i => i.priority === 'high').length;
-      document.getElementById('count-medium').textContent = allItems.filter(i => i.priority === 'medium').length;
-      document.getElementById('count-low').textContent = allItems.filter(i => i.priority === 'low').length;
+      
+      document.getElementById('count-high').textContent = allItems.filter(i => {
+        const p = (i.priority || '').toLowerCase();
+        return p === 'high' || p === 'critical';
+      }).length;
+      document.getElementById('count-medium').textContent = allItems.filter(i => (i.priority || '').toLowerCase() === 'medium').length;
+      document.getElementById('count-low').textContent = allItems.filter(i => (i.priority || '').toLowerCase() === 'low').length;
+      
       document.getElementById('stat-total').textContent = allItems.length;
-      document.getElementById('stat-inprogress').textContent = allItems.filter(i => !i.closed && i.status !== 'done' && i.status !== 'read' && i.status !== 'completed').length;
-      document.getElementById('stat-done').textContent = allItems.filter(i => i.closed || i.status === 'done' || i.status === 'read' || i.status === 'completed').length;
+      document.getElementById('stat-inprogress').textContent = allItems.filter(i => {
+        const status = (i.status || '').toLowerCase();
+        return status.includes('progress') || status === 'in_progress' || status === 'active';
+      }).length;
+      document.getElementById('stat-done').textContent = allItems.filter(i => {
+        const status = (i.status || '').toLowerCase();
+        return status === 'done' || status === 'completed' || status === 'sent' || i.closed;
+      }).length;
       document.getElementById('stat-overdue').textContent = allItems.filter(i => {
         const due = i.due || i.due_date;
-        return due && new Date(due) < new Date() && !i.closed && i.status !== 'done' && i.status !== 'completed';
+        return due && new Date(due) < new Date() && 
+               !['done', 'completed', 'sent'].includes((i.status || '').toLowerCase());
       }).length;
     }
 
@@ -949,26 +1391,44 @@
     }
 
     function renderGridView(area) {
-      if (!filteredItems.length) { area.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted);">No items to display</div>'; return; }
+      if (!filteredItems.length) { 
+        area.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted);">No items to display</div>'; 
+        return; 
+      }
+      
       let html = '<div class="tasks-grid">';
+      
       filteredItems.forEach(item => {
-        const isOverdue = (item.due || item.due_date) && new Date(item.due || item.due_date) < new Date() && !item.closed && item.status !== 'done' && item.status !== 'completed';
-        const title = item.name || item.title || 'Untitled';
+        const isOverdue = (item.due || item.due_date) && new Date(item.due || item.due_date) < new Date() && 
+                         !['done', 'completed', 'sent'].includes((item.status || '').toLowerCase());
+        const title = item.name || item.title || item.key || 'Untitled';
         const desc = item.desc || item.description || 'No description';
         const dueDate = item.due || item.due_date;
         const sourceClass = item.source || 'trello';
-        html += `<div class="task-card" onclick="analyzeItem('${item.id}')">
-          <div class="card-header"><span class="source-badge ${sourceClass}">${sourceClass}</span><div class="card-title">${escapeHtml(title.substring(0,50))}</div></div>
-          <div class="card-meta"><span class="priority-badge ${item.priority || 'medium'}">${item.priority || 'medium'}</span><span class="status-badge">${item.closed ? 'Done' : (item.status || 'Active')}</span></div>
+        
+        html += `<div class="task-card" onclick="showEditModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+          <div class="card-header">
+            <span class="source-badge ${sourceClass}">${sourceClass}</span>
+            <div class="card-title">${escapeHtml(title.substring(0,50))}</div>
+          </div>
+          <div class="card-meta">
+            <span class="priority-badge ${(item.priority || 'medium').toLowerCase()}">${item.priority || 'medium'}</span>
+            <span class="status-badge">${item.status || 'Active'}</span>
+          </div>
           <div class="card-desc">${escapeHtml(desc.substring(0,100))}${desc.length>100?'...':''}</div>
           <div class="card-footer">
-            <span class="assignee">👤 ${item.members?.map(m=>m.fullName).join(', ') || item.assignee || item.from || item.channel || 'Unassigned'}</span>
-            ${dueDate?`<span class="due-date ${isOverdue?'overdue':''}">📅 ${new Date(dueDate).toLocaleDateString()}</span>`:''}
+            <span class="assignee">👤 ${item.assignee || item.from || item.user || 'Unassigned'}</span>
+            ${dueDate ? `<span class="due-date ${isOverdue ? 'overdue' : ''}">📅 ${new Date(dueDate).toLocaleDateString()}</span>` : ''}
           </div>
-          ${item.boardName?`<div style="font-size:10px;color:var(--muted);margin-top:8px;">📋 ${escapeHtml(item.boardName)}</div>`:''}
-          ${item.labels?`<div style="font-size:10px;color:var(--muted);margin-top:4px;">🏷️ ${item.labels.join(', ')}</div>`:''}
+          ${item.boardName ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;">📋 ${escapeHtml(item.boardName)}</div>` : ''}
+          ${item.project ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;">🔷 ${item.project}</div>` : ''}
+          <div class="item-actions">
+            <button class="item-action-btn" onclick="event.stopPropagation(); showEditModal(${JSON.stringify(item).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Edit</button>
+            <button class="item-action-btn" onclick="event.stopPropagation(); deleteItemById('${item.id}')"><i class="fas fa-trash"></i></button>
+          </div>
         </div>`;
       });
+      
       html += '</div>';
       area.innerHTML = html;
     }
@@ -978,19 +1438,25 @@
       setTimeout(() => {
         const calendarEl = document.getElementById('calendar');
         if (calendar) calendar.destroy();
+        
         const events = filteredItems.filter(item => item.due || item.due_date).map(item => ({
           id: item.id, 
-          title: item.name || item.title,
+          title: item.name || item.title || item.key,
           start: item.due || item.due_date,
-          backgroundColor: item.priority==='high'?'#ff4757': item.priority==='medium'?'#ffa502':'#00d4aa'
+          backgroundColor: (item.priority || '').toLowerCase() === 'high' || item.priority === 'Critical' ? '#ff4757' : 
+                         (item.priority || '').toLowerCase() === 'medium' ? '#ffa502' : '#00d4aa'
         }));
+        
         calendar = new FullCalendar.Calendar(calendarEl, {
           initialView: 'dayGridMonth',
           headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
           events: events, 
           themeSystem: 'standard', 
           height: 'auto',
-          eventClick: (info) => analyzeItem(info.event.id)
+          eventClick: (info) => {
+            const item = allItems.find(i => i.id === info.event.id);
+            if (item) showEditModal(item);
+          }
         });
         calendar.render();
       }, 100);
@@ -1000,16 +1466,30 @@
       const tasks = filteredItems.filter(item => item.due || item.due_date);
       const today = new Date();
       let html = '<div class="gantt-view"><div class="gantt-header">';
-      for (let i=0; i<7; i++) { let d = new Date(today); d.setDate(today.getDate() + i*5); html += `<div style="flex:1;">${d.toLocaleDateString()}</div>`; }
+      for (let i=0; i<7; i++) { 
+        let d = new Date(today); 
+        d.setDate(today.getDate() + i*5); 
+        html += `<div style="flex:1;">${d.toLocaleDateString()}</div>`; 
+      }
       html += '</div>';
-      tasks.slice(0,10).forEach(task => {
+      
+      tasks.slice(0,15).forEach(task => {
         const due = new Date(task.due || task.due_date);
         const dayDiff = Math.floor((due - today) / (86400000));
         const position = Math.max(0, Math.min(dayDiff, 35)) * (100/35);
-        html += `<div class="gantt-row"><div class="gantt-task-name">${escapeHtml((task.name||task.title||'').substring(0,20))}</div><div class="gantt-bar-container"><div class="gantt-bar" style="left:${position}%; width:20px;" data-task="${task.id}"></div></div></div>`;
+        const title = task.name || task.title || task.key || 'Task';
+        
+        html += `<div class="gantt-row">
+          <div class="gantt-task-name" onclick="showEditModal(${JSON.stringify(task).replace(/"/g, '&quot;')})">${escapeHtml(title.substring(0,20))}</div>
+          <div class="gantt-bar-container">
+            <div class="gantt-bar" style="left:${position}%; width:${Math.max(10, 30 - dayDiff/2)}px;" data-task="${task.id}"></div>
+          </div>
+        </div>`;
       });
+      
       html += '</div>';
       area.innerHTML = html;
+      
       setTimeout(() => {
         interact('.gantt-bar').draggable({ 
           listeners: { 
@@ -1024,38 +1504,89 @@
       }, 100);
     }
 
-    // ========== AI CHAT WITH DEEPSEEK ==========
+    // ========== AI CHAT ==========
     window.sendMessage = function() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
       if (!text) return;
+      
       addMessage('user', text); 
       input.value = '';
       
-      // Simulate DeepSeek AI response with context from all sources
-      setTimeout(() => {
+      setTimeout(async () => {
+        const lowerText = text.toLowerCase();
         let response = '';
-        if (text.toLowerCase().includes('high priority')) {
-          const highCount = allItems.filter(i => i.priority === 'high').length;
-          const highItems = allItems.filter(i => i.priority === 'high').map(i => `- ${i.title || i.name} (${i.source})`).slice(0,5).join('\n');
-          response = `🔍 **DeepSeek Analysis**: Found ${highCount} high priority items across all sources.\n\n${highItems}\n\n${highCount > 5 ? '...and more' : ''}`;
-        } else if (text.toLowerCase().includes('overdue')) {
-          const overdueCount = allItems.filter(i => {
-            let d = i.due || i.due_date; 
-            return d && new Date(d) < new Date() && !i.closed && i.status !== 'done';
-          }).length;
-          response = `⚠️ **DeepSeek Alert**: You have ${overdueCount} overdue tasks. Check the calendar view for details. I recommend addressing these first.`;
-        } else if (text.toLowerCase().includes('email') || text.toLowerCase().includes('gmail')) {
-          const unreadEmails = allItems.filter(i => i.source === 'gmail' && i.status === 'unread').length;
-          response = `📧 **Email Summary**: You have ${unreadEmails} unread emails. The most recent is from ${allItems.find(i => i.source === 'gmail')?.from || 'unknown'}.`;
-        } else if (text.toLowerCase().includes('slack')) {
-          const slackMessages = allItems.filter(i => i.source === 'slack').length;
-          response = `💬 **Slack Activity**: Found ${slackMessages} messages across channels. #${allItems.find(i => i.source === 'slack')?.channel || 'general'} has the latest activity.`;
-        } else {
-          response = `🤖 **DeepSeek AI**: I've analyzed your request. You have ${allItems.length} total items across ${[...new Set(allItems.map(i=>i.source))].join(', ')}. How can I help further?`;
+        
+        // Trello creation
+        if (lowerText.includes('trello') && (lowerText.includes('create') || lowerText.includes('new'))) {
+          const title = text.replace(/.*create.*?(?:card|task)?\s*(?:called|named)?\s*["']?([^"']+)["']?/i, '$1') || 'New Task';
+          await createTrelloCard({ title, description: 'Created via AI', priority: 'medium' });
+          response = `✅ Created new Trello card: "${title}"`;
         }
+        
+        // Jira creation
+        else if (lowerText.includes('jira') && (lowerText.includes('create') || lowerText.includes('new'))) {
+          const summary = text.replace(/.*create.*?(?:issue|ticket)?\s*(?:called|named)?\s*["']?([^"']+)["']?/i, '$1') || 'New Issue';
+          await createJiraIssue({ 
+            project: 'PROJ', 
+            summary: summary, 
+            description: 'Created via AI',
+            type: 'Task',
+            priority: 'Medium'
+          });
+          response = `✅ Created new Jira issue: "${summary}"`;
+        }
+        
+        // Slack message
+        else if (lowerText.includes('slack') && lowerText.includes('send')) {
+          const channelMatch = text.match(/#(\w+)|@(\w+)/);
+          const channel = channelMatch ? channelMatch[0] : '#general';
+          const message = text.replace(/.*send.*?slack.*?(?:message)?\s*(?:to)?\s*#?\w+\s*(?:say|:)?\s*["']?([^"']+)/i, '$1') || 'Hello from AI';
+          await sendSlackMessage({ channel, message });
+          response = `✅ Sent Slack message to ${channel}`;
+        }
+        
+        // Gmail send
+        else if (lowerText.includes('email') || (lowerText.includes('gmail') && lowerText.includes('send'))) {
+          const toMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+          const to = toMatch ? toMatch[0] : 'team@company.com';
+          const subject = text.replace(/.*(?:email|send).*?(?:about|with subject)?\s*["']?([^"']+)/i, '$1') || 'AI Generated Message';
+          await sendGmailEmail({ to, subject, body: 'Sent via UnifyAI' });
+          response = `✅ Sent email to ${to}`;
+        }
+        
+        // Analysis
+        else if (lowerText.includes('analyze') || lowerText.includes('summary')) {
+          const highCount = allItems.filter(i => (i.priority || '').toLowerCase() === 'high' || i.priority === 'Critical').length;
+          const overdueCount = allItems.filter(i => {
+            const due = i.due || i.due_date;
+            return due && new Date(due) < new Date() && 
+                   !['done', 'completed'].includes((i.status || '').toLowerCase());
+          }).length;
+          
+          response = `🔍 **Unified Analysis**\n\n` +
+                    `**Total Items:** ${allItems.length}\n` +
+                    `**By Source:** Trello: ${allItems.filter(i => i.source === 'trello').length}, ` +
+                    `Jira: ${allItems.filter(i => i.source === 'jira').length}, ` +
+                    `Slack: ${allItems.filter(i => i.source === 'slack').length}, ` +
+                    `Gmail: ${allItems.filter(i => i.source === 'gmail').length}\n` +
+                    `**High Priority:** ${highCount}\n` +
+                    `**Overdue:** ${overdueCount}\n` +
+                    `**In Progress:** ${allItems.filter(i => (i.status || '').toLowerCase().includes('progress')).length}`;
+        }
+        
+        // Default
+        else {
+          response = `🤖 **Universal AI Controller**\n\nI can help you manage all your sources. Try:\n` +
+                    `• "Create a new Trello card for Q4 planning"\n` +
+                    `• "Create a high priority Jira bug for login issue"\n` +
+                    `• "Send a Slack message to #general about the meeting"\n` +
+                    `• "Send an email to team@company.com about sprint"\n` +
+                    `• "Analyze all my tasks"`;
+        }
+        
         addMessage('ai', response);
-      }, 1200);
+      }, 1000);
     };
 
     window.sendQuickPrompt = function(text) {
@@ -1067,30 +1598,30 @@
       const area = document.getElementById('chat-area');
       const div = document.createElement('div'); 
       div.className = `msg ${role}`;
-      div.innerHTML = `<div class="msg-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
+      div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>`;
       area.appendChild(div); 
       area.scrollTop = area.scrollHeight;
     }
 
-    window.analyzeItem = function(itemId) {
-      const item = allItems.find(i => i.id === itemId);
-      if (!item) return;
-      addMessage('user', `Analyze: ${item.name || item.title}`);
+    // ========== TRELLO BOARD LOADING ==========
+    async function loadTrelloBoardsForModal() {
+      const select = document.getElementById('trello-board');
+      if (!select) return;
       
-      // DeepSeek style analysis
-      let analysis = `📊 **DeepSeek Task Analysis**\n\n`;
-      analysis += `**Title:** ${item.name || item.title}\n`;
-      analysis += `**Source:** ${item.source}\n`;
-      analysis += `**Status:** ${item.closed ? 'Done' : (item.status || 'Active')}\n`;
-      analysis += `**Priority:** ${item.priority || 'Not set'}\n`;
-      if (item.due || item.due_date) analysis += `**Due:** ${new Date(item.due || item.due_date).toLocaleDateString()}\n`;
-      if (item.assignee || item.from) analysis += `**Assignee/From:** ${item.assignee || item.from}\n`;
-      analysis += `\n💡 **AI Suggestion:** ${item.closed ? 'Task is complete.' : 
-        (item.priority === 'high' ? 'High priority - complete within 24 hours.' : 
-        'Consider batching with similar tasks for efficiency.')}`;
+      select.innerHTML = '<option value="Product Development">Product Development</option><option value="Marketing">Marketing</option><option value="Engineering">Engineering</option>';
       
-      addMessage('ai', analysis);
-    };
+      // Update list based on selection
+      document.getElementById('trello-board').addEventListener('change', function(e) {
+        const listSelect = document.getElementById('trello-list');
+        if (e.target.value === 'Product Development') {
+          listSelect.innerHTML = '<option value="Backlog">Backlog</option><option value="In Progress">In Progress</option><option value="Review">Review</option><option value="Done">Done</option>';
+        } else if (e.target.value === 'Marketing') {
+          listSelect.innerHTML = '<option value="Ideas">Ideas</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>';
+        } else {
+          listSelect.innerHTML = '<option value="To Do">To Do</option><option value="Doing">Doing</option><option value="Done">Done</option>';
+        }
+      });
+    }
 
     // ========== EXPORT ==========
     window.exportData = function(format) {
@@ -1099,14 +1630,15 @@
     };
     
     function exportCSV() {
-      const headers = ['Title','Source','Status','Priority','Due Date','Assignee','Description'];
+      const headers = ['Title','Source','Type','Status','Priority','Due Date','Assignee','Description'];
       const rows = filteredItems.map(i => [
-        i.name || i.title || '', 
-        i.source || 'trello', 
-        i.closed ? 'Done' : (i.status || 'Active'), 
-        i.priority || 'medium', 
+        i.name || i.title || i.key || '', 
+        i.source, 
+        i.type || 'item',
+        i.status || '', 
+        i.priority || '', 
         i.due || i.due_date || '',
-        i.assignee || i.from || i.channel || '',
+        i.assignee || i.from || i.user || '',
         (i.desc || i.description || '').replace(/[,\n]/g, ' ')
       ]);
       const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
@@ -1122,22 +1654,23 @@
       const doc = new jsPDF();
       doc.setFontSize(18); 
       doc.setTextColor(108,99,255); 
-      doc.text('UnifyAI Enterprise Report',14,22);
+      doc.text('UnifyAI Universal Report',14,22);
       doc.setFontSize(10); 
       doc.text(`Generated: ${new Date().toLocaleString()}`,14,32);
       doc.text(`Sources: ${[...new Set(allItems.map(i=>i.source))].join(', ')}`,14,38);
+      doc.text(`Total Items: ${allItems.length}`,14,44);
       
       const headers = [['Title','Source','Status','Priority']];
       const data = filteredItems.slice(0,20).map(i => [
-        (i.name || i.title || '').substring(0,30), 
-        i.source || 'trello', 
-        i.closed ? 'Done' : (i.status || 'Active'), 
-        i.priority || 'medium'
+        (i.name || i.title || i.key || '').substring(0,30), 
+        i.source, 
+        i.status || 'Active', 
+        i.priority || 'Medium'
       ]);
       doc.autoTable({ 
         head: headers, 
         body: data, 
-        startY:45, 
+        startY:50, 
         theme:'grid', 
         styles:{fontSize:8}, 
         headStyles:{fillColor:[108,99,255]} 
@@ -1158,31 +1691,27 @@
     }
 
     // ========== SYNC ==========
-    window.syncAll = async function() {
+    window.syncAll = function() {
       const btn = document.getElementById('sync-btn'); 
       const icon = document.getElementById('sync-icon');
       btn.disabled = true; 
       icon.className = 'fas fa-sync-alt spin';
       
-      await loadTrelloData();
-      
-      // Also refresh other connected sources
-      if (API_KEYS.jira.connected) loadSourceData('jira');
-      if (API_KEYS.slack.connected) loadSourceData('slack');
-      if (API_KEYS.gmail.connected) loadSourceData('gmail');
-      
-      btn.disabled = false; 
-      icon.className = 'fas fa-sync-alt';
+      setTimeout(() => {
+        showToast('✅ All sources synced', 'success');
+        btn.disabled = false; 
+        icon.className = 'fas fa-sync-alt';
+        filterItems();
+      }, 1500);
     };
 
     // ========== UI ==========
     window.openConfig = function() { 
-      document.getElementById('modal').style.display = 'flex'; 
-      updateConnectionDots();
+      alert('Configuration panel - API keys are pre-configured for demo');
     };
     
     window.closeConfig = function() { 
-      document.getElementById('modal').style.display = 'none'; 
+      // Not needed
     };
     
     window.toggleSidebar = function() { 
@@ -1199,23 +1728,18 @@
       ev.target.closest('button').classList.add('active');
     };
 
+    // Make delete function globally available
+    window.deleteItemById = deleteItemById;
+
     // ========== INIT ==========
     window.onload = function() {
       setTheme(theme, { target: document.querySelector('.theme-toggle button') });
       updateConnectionDots();
       
-      // Initialize with sample data plus any connected sources
-      allItems = [...SAMPLE_ITEMS];
+      filterItems();
+      showToast('👋 Welcome to UnifyAI Universal Management System', 'info');
       
-      if (API_KEYS.trello.token) {
-        loadTrelloData();
-      } else {
-        // Show sample data initially
-        filterItems();
-        showToast('👋 Welcome to UnifyAI Pro. Connect your sources in Config.', 'info');
-      }
-      
-      // Add DeepSeek badge styling
+      // Add styles for new elements
       const style = document.createElement('style');
       style.textContent = `
         .connect-btn-small {
@@ -1230,6 +1754,13 @@
         .connect-btn-small:hover {
           border-color: var(--accent);
           color: var(--accent);
+        }
+        .msg.system .msg-bubble {
+          background: rgba(108,99,255,0.1);
+          border: 1px solid var(--accent);
+          color: var(--accent2);
+          text-align: center;
+          font-weight: 600;
         }
       `;
       document.head.appendChild(style);

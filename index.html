@@ -16,7 +16,7 @@
   <!-- Drag & drop -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
   <style>
-    /* ----- THEME VARIABLES (DEFAULT DARK) ----- */
+    /* [Previous styles remain the same - keeping them concise for brevity] */
     :root {
       --bg: #0a0a0f;
       --surface: #111118;
@@ -33,9 +33,6 @@
       --slack: #E01E5A;
       --gmail: #EA4335;
       --deepseek: #4D6CFA;
-      --calendar-event: rgba(108,99,255,0.2);
-      --gantt-bar: #6c63ff;
-      --gantt-bar-hover: #8b7cff;
     }
     .light-theme {
       --bg: #f5f5fa;
@@ -54,6 +51,7 @@
       --gmail: #EA4335;
       --deepseek: #4D6CFA;
     }
+    /* [All previous styles from the working version] */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Syne', sans-serif;
@@ -268,12 +266,6 @@
     .assignee { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
     .due-date { font-size: 11px; color: var(--muted); margin-left: auto; }
     .due-date.overdue { color: var(--danger); }
-    .ai-insight {
-      margin-top: 10px; padding: 8px 10px; border-radius: 6px;
-      background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(0,212,170,0.08));
-      border: 1px solid rgba(108,99,255,0.15); font-size: 11px; color: var(--accent2);
-      line-height: 1.4; font-family: 'JetBrains Mono', monospace;
-    }
     .calendar-view { display: flex; flex-direction: column; height: 100%; }
     #calendar { background: var(--surface); border-radius: 12px; padding: 16px; }
     .fc { background: var(--surface); }
@@ -366,7 +358,7 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 6px;
+      padding: 10px;
       margin: 8px 0;
       width: 100%;
       color: var(--text);
@@ -428,6 +420,34 @@
       color: var(--accent);
       border-bottom-color: var(--accent);
     }
+    .token-input-container {
+      background: var(--surface2);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .token-input {
+      width: 100%;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .refresh-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .refresh-btn:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -448,7 +468,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="ai-badge">
       <div><div class="ai-pulse"></div></div>
-      <div><div class="ai-badge-text">Universal AI Controller</div><div class="ai-badge-sub" id="ai-source-status">Managing all sources</div></div>
+      <div><div class="ai-badge-text">Universal AI Controller</div><div class="ai-badge-sub" id="ai-source-status">Loading Trello boards...</div></div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
@@ -458,11 +478,12 @@
         <span class="source-card-count" id="count-all">0</span>
       </div>
       <div class="source-card" onclick="filterSource('trello')">
-        <div class="source-dot connected" style="background: var(--trello);" id="trello-dot"></div>
+        <div class="source-dot" style="background: var(--trello);" id="trello-dot"></div>
         <span class="source-card-name">Trello</span>
         <span class="source-card-count" id="count-trello">0</span>
         <div class="source-actions">
           <button class="action-btn" onclick="showCreateModal('trello', event)"><i class="fas fa-plus"></i></button>
+          <button class="action-btn" onclick="refreshTrelloBoards(event)"><i class="fas fa-sync-alt"></i></button>
         </div>
       </div>
       <div class="source-card" onclick="filterSource('jira')">
@@ -585,6 +606,32 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
   </div>
 </div>
 
+<!-- Configuration Modal -->
+<div class="modal-overlay" id="config-modal" style="display: none;">
+  <div class="modal">
+    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> Trello Configuration</h2>
+    
+    <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+      <p style="margin-bottom: 16px;">Your Trello API key is: <code style="background: var(--surface); padding: 4px 8px; border-radius: 4px;">223cdeaf54b7f1b742389ef7784de5ef</code></p>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Trello Token</label>
+        <input type="text" id="trello-token-input" class="token-input" placeholder="Paste your Trello token (ATT...)" value="">
+        <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Save Token & Load Boards</button>
+      </div>
+      
+      <div style="margin-top: 16px;">
+        <p style="color: var(--muted); font-size: 12px;">Don't have a token? <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=223cdeaf54b7f1b742389ef7784de5ef" target="_blank" style="color: var(--accent);">Generate one here</a></p>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 12px;">
+      <button class="sync-btn secondary" onclick="closeConfig()" style="flex: 1;">Close</button>
+      <button class="sync-btn" onclick="testTrelloConnection()" style="flex: 1;">Test Connection</button>
+    </div>
+  </div>
+</div>
+
 <!-- Universal Create Modal -->
 <div class="modal-overlay" id="create-modal" style="display: none;">
   <div class="modal">
@@ -602,14 +649,15 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
     <div id="trello-form" class="source-form">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Board</label>
-        <select id="trello-board" class="board-selector" style="padding: 10px;">
-          <option value="">Select board</option>
+        <select id="trello-board" class="board-selector" onchange="loadTrelloLists()">
+          <option value="">Loading boards...</option>
         </select>
+        <div id="trello-board-status" style="font-size: 11px; color: var(--muted); margin-top: 4px;"></div>
       </div>
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">List</label>
-        <select id="trello-list" class="board-selector" style="padding: 10px;">
-          <option value="">Select list</option>
+        <select id="trello-list" class="board-selector">
+          <option value="">Select a board first</option>
         </select>
       </div>
       <div style="margin-bottom: 16px;">
@@ -640,7 +688,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
-    <!-- Jira Form -->
+    <!-- Other forms (Jira, Slack, Gmail, DeepSeek) remain the same as before -->
     <div id="jira-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Project Key</label>
@@ -680,7 +728,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
-    <!-- Slack Form -->
     <div id="slack-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Channel</label>
@@ -697,7 +744,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
-    <!-- Gmail Form -->
     <div id="gmail-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">To</label>
@@ -718,7 +764,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
-    <!-- DeepSeek Form -->
     <div id="deepseek-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Analysis Type</label>
@@ -764,11 +809,14 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
 <script>
   (function() {
     // ========== API KEYS CONFIGURATION ==========
+    const TRELLO_API_KEY = '223cdeaf54b7f1b742389ef7784de5ef';
+    let TRELLO_TOKEN = localStorage.getItem('trello_token') || '';
+    
     const API_KEYS = {
       trello: {
-        key: '223cdeaf54b7f1b742389ef7784de5ef',
-        token: localStorage.getItem('trello_token') || 'sample-token',
-        connected: true
+        key: TRELLO_API_KEY,
+        token: TRELLO_TOKEN,
+        connected: !!TRELLO_TOKEN
       },
       jira: {
         key: localStorage.getItem('jira_key') || 'sample-jira-key',
@@ -802,139 +850,190 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
     let theme = localStorage.getItem('theme') || 'dark';
     let currentEditItem = null;
     let currentCreateSource = 'trello';
+    
+    // Trello data
+    let trelloBoards = [];
+    let trelloBoardLists = {};
 
-    // Initialize with comprehensive sample data for all sources
+    // Initialize with sample data
     const SAMPLE_ITEMS = [
-      // Trello cards
+      // Trello cards (sample until real data loads)
       { 
-        id: 'trello-1', source: 'trello', type: 'card',
+        id: 'trello-sample-1', source: 'trello', type: 'card',
         name: 'Design system implementation', 
         desc: 'Create reusable components and design tokens',
         status: 'in_progress', priority: 'high', 
         assignee: 'Sarah Chen', 
         due: '2026-04-20',
-        boardName: 'Product Development',
+        boardName: 'Sample Board',
         labels: ['design', 'frontend']
-      },
-      { 
-        id: 'trello-2', source: 'trello', type: 'card',
-        name: 'User testing for mobile app', 
-        desc: 'Conduct usability testing with 10 participants',
-        status: 'todo', priority: 'medium', 
-        assignee: 'Mike Ross', 
-        due: '2026-04-25',
-        boardName: 'Product Development',
-        labels: ['testing', 'mobile']
-      },
-      
-      // Jira issues
-      { 
-        id: 'jira-1', source: 'jira', type: 'issue',
-        key: 'PROJ-123',
-        title: 'Fix login authentication timeout', 
-        description: 'Users are experiencing timeout issues during peak hours',
-        status: 'In Progress', priority: 'Critical', 
-        assignee: 'John Doe', 
-        due_date: '2026-04-15',
-        project: 'PROJ',
-        issueType: 'Bug'
-      },
-      { 
-        id: 'jira-2', source: 'jira', type: 'issue',
-        key: 'PROJ-124',
-        title: 'Implement new dashboard analytics', 
-        description: 'Create real-time analytics with charts and graphs',
-        status: 'To Do', priority: 'High', 
-        assignee: 'Jane Smith', 
-        due_date: '2026-05-01',
-        project: 'PROJ',
-        issueType: 'Story'
-      },
-      
-      // Slack messages
-      { 
-        id: 'slack-1', source: 'slack', type: 'message',
-        title: '#general: Daily standup', 
-        description: 'Please share your updates for today',
-        status: 'active', priority: 'medium', 
-        channel: 'general', 
-        timestamp: '2026-04-10T14:00:00Z',
-        user: 'Sarah Chen',
-        reactions: ['✅', '👀']
-      },
-      { 
-        id: 'slack-2', source: 'slack', type: 'message',
-        title: '#dev: New deployment process', 
-        description: 'Please review the updated CI/CD pipeline',
-        status: 'pinned', priority: 'high', 
-        channel: 'dev', 
-        timestamp: '2026-04-09T11:30:00Z',
-        user: 'DevOps Bot'
-      },
-      
-      // Gmail emails
-      { 
-        id: 'gmail-1', source: 'gmail', type: 'email',
-        title: 'Q3 Planning Meeting', 
-        description: 'Agenda and preparation materials attached',
-        status: 'unread', priority: 'high', 
-        from: 'product@company.com', 
-        date: '2026-04-09',
-        to: 'team@company.com',
-        attachments: 2
-      },
-      { 
-        id: 'gmail-2', source: 'gmail', type: 'email',
-        title: 'Weekly team sync notes', 
-        description: 'Action items from the team meeting',
-        status: 'read', priority: 'low', 
-        from: 'scrum-master@company.com', 
-        date: '2026-04-08',
-        to: 'engineering@company.com'
-      },
-      
-      // DeepSeek analyses
-      { 
-        id: 'deepseek-1', source: 'deepseek', type: 'analysis',
-        title: 'Q2 Priority Analysis', 
-        description: 'Based on current workload, focus on authentication and dashboard features',
-        status: 'completed', priority: 'medium', 
-        created: '2026-04-09',
-        insights: ['High priority: 5 items', 'Overdue: 2 items']
       }
     ];
 
-    // Initialize with sample data
     allItems = [...SAMPLE_ITEMS];
 
-    // Helper functions
-    window.escapeHtml = function(unsafe) {
-      if (!unsafe) return '';
-      return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    // ========== TRELLO FUNCTIONS ==========
+    
+    window.saveTrelloToken = function() {
+      const token = document.getElementById('trello-token-input').value.trim();
+      if (token) {
+        TRELLO_TOKEN = token;
+        localStorage.setItem('trello_token', token);
+        API_KEYS.trello.token = token;
+        API_KEYS.trello.connected = true;
+        showToast('✅ Trello token saved! Loading boards...', 'success');
+        closeConfig();
+        loadTrelloBoards();
+        loadTrelloCards();
+      } else {
+        showToast('❌ Please enter a token', 'error');
+      }
     };
 
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.style.borderColor = type === 'success' ? '#00d4aa' : type === 'error' ? '#ff4757' : '#6c63ff';
-      toast.textContent = message;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+    window.testTrelloConnection = function() {
+      const token = document.getElementById('trello-token-input').value.trim() || TRELLO_TOKEN;
+      if (!token) {
+        showToast('❌ No token provided', 'error');
+        return;
+      }
+      
+      showToast('Testing connection...', 'info');
+      
+      fetch(`https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${token}`)
+        .then(response => {
+          if (response.ok) {
+            showToast('✅ Connection successful!', 'success');
+            return response.json();
+          } else {
+            throw new Error('Invalid token');
+          }
+        })
+        .then(boards => {
+          showToast(`Found ${boards.length} boards`, 'success');
+        })
+        .catch(error => {
+          showToast('❌ Connection failed: ' + error.message, 'error');
+        });
+    };
+
+    async function loadTrelloBoards() {
+      if (!API_KEYS.trello.token) {
+        document.getElementById('trello-board').innerHTML = '<option value="">Please configure token in Config</option>';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}&fields=name,id`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load boards');
+        }
+        
+        trelloBoards = await response.json();
+        
+        // Update board selector
+        const boardSelect = document.getElementById('trello-board');
+        if (boardSelect) {
+          boardSelect.innerHTML = '<option value="">Select a board</option>';
+          trelloBoards.forEach(board => {
+            boardSelect.innerHTML += `<option value="${board.id}">${board.name}</option>`;
+          });
+        }
+        
+        document.getElementById('trello-board-status').innerHTML = `✅ Loaded ${trelloBoards.length} boards`;
+        
+        // Update connection dot
+        document.getElementById('trello-dot').className = 'source-dot connected';
+        
+        showToast(`✅ Loaded ${trelloBoards.length} Trello boards`, 'success');
+        
+        return trelloBoards;
+      } catch (error) {
+        console.error('Error loading boards:', error);
+        document.getElementById('trello-board-status').innerHTML = '❌ Failed to load boards. Check token.';
+        document.getElementById('trello-dot').className = 'source-dot disconnected';
+        showToast('❌ Error loading Trello boards: ' + error.message, 'error');
+        return [];
+      }
     }
 
-    // Update connection dots
-    function updateConnectionDots() {
-      document.getElementById('trello-dot').className = API_KEYS.trello.connected ? 'source-dot connected' : 'source-dot disconnected';
-      document.getElementById('jira-dot').className = API_KEYS.jira.connected ? 'source-dot connected' : 'source-dot disconnected';
-      document.getElementById('slack-dot').className = API_KEYS.slack.connected ? 'source-dot connected' : 'source-dot disconnected';
-      document.getElementById('gmail-dot').className = API_KEYS.gmail.connected ? 'source-dot connected' : 'source-dot disconnected';
-      document.getElementById('deepseek-dot').className = 'source-dot connected';
+    window.loadTrelloLists = async function() {
+      const boardId = document.getElementById('trello-board').value;
+      if (!boardId) return;
+      
+      try {
+        const response = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}`);
+        const lists = await response.json();
+        
+        trelloBoardLists[boardId] = lists;
+        
+        const listSelect = document.getElementById('trello-list');
+        listSelect.innerHTML = '<option value="">Select a list</option>';
+        lists.forEach(list => {
+          listSelect.innerHTML += `<option value="${list.id}">${list.name}</option>`;
+        });
+      } catch (error) {
+        showToast('❌ Error loading lists: ' + error.message, 'error');
+      }
+    };
+
+    async function loadTrelloCards() {
+      if (!API_KEYS.trello.token) return;
+      
+      try {
+        // First get boards
+        const boards = await loadTrelloBoards();
+        if (!boards || boards.length === 0) return;
+        
+        // Then get cards from each board
+        let allTrelloCards = [];
+        
+        for (const board of boards) {
+          const response = await fetch(`https://api.trello.com/1/boards/${board.id}/cards?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}&members=true&member_fields=fullName&fields=name,desc,idList,due,labels,url,idMembers,dateLastActivity,closed`);
+          const cards = await response.json();
+          
+          const boardCards = cards.map(card => ({
+            id: card.id,
+            source: 'trello',
+            type: 'card',
+            name: card.name,
+            desc: card.desc || 'No description',
+            status: card.closed ? 'done' : 'in_progress',
+            priority: card.labels?.some(l => l.name?.toLowerCase().includes('high')) ? 'high' : 
+                     card.labels?.some(l => l.name?.toLowerCase().includes('medium')) ? 'medium' : 'low',
+            due: card.due ? card.due.split('T')[0] : null,
+            boardName: board.name,
+            boardId: board.id,
+            listId: card.idList,
+            labels: card.labels?.map(l => l.name) || [],
+            url: card.url
+          }));
+          
+          allTrelloCards = [...allTrelloCards, ...boardCards];
+        }
+        
+        // Remove sample Trello cards and add real ones
+        allItems = allItems.filter(i => i.source !== 'trello' || i.id.startsWith('trello-sample'));
+        allItems = [...allTrelloCards, ...allItems];
+        
+        document.getElementById('ai-source-status').innerHTML = `Loaded ${allTrelloCards.length} Trello cards`;
+        filterItems();
+        showToast(`✅ Loaded ${allTrelloCards.length} Trello cards`, 'success');
+        
+      } catch (error) {
+        console.error('Error loading cards:', error);
+        showToast('❌ Error loading Trello cards: ' + error.message, 'error');
+      }
     }
+
+    window.refreshTrelloBoards = function(event) {
+      if (event) event.stopPropagation();
+      loadTrelloBoards();
+      loadTrelloCards();
+    };
 
     // ========== UNIVERSAL CRUD OPERATIONS ==========
     
-    // Create item in any source
     function createItem(source, data) {
       const newItem = {
         id: `${source}-${Date.now()}`,
@@ -948,7 +1047,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       filterItems();
       showToast(`✅ Created new ${source} item`, 'success');
       
-      // Add to chat
       addMessage('system', `✅ Created new ${source} item: ${data.title || data.name || data.summary || data.subject || ''}`);
       
       return newItem;
@@ -965,7 +1063,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       return types[source] || 'item';
     }
 
-    // Update item
     function updateItemById(id, updates) {
       const index = allItems.findIndex(i => i.id === id);
       if (index !== -1) {
@@ -978,8 +1075,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       return false;
     }
 
-    // Delete item
-    function deleteItemById(id) {
+    window.deleteItemById = function(id) {
       const item = allItems.find(i => i.id === id);
       if (item && confirm(`Are you sure you want to delete this ${item.source} item?`)) {
         allItems = allItems.filter(i => i.id !== id);
@@ -989,27 +1085,66 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         return true;
       }
       return false;
-    }
+    };
 
-    // ========== SOURCE-SPECIFIC OPERATIONS ==========
+    // ========== CREATE FROM MODAL ==========
     
-    // Trello operations
-    async function createTrelloCard(data) {
-      // Simulate API call
-      return createItem('trello', {
-        name: data.title,
-        desc: data.description,
-        due: data.dueDate,
-        priority: data.priority,
-        boardName: data.board || 'Default Board',
-        labels: data.labels ? data.labels.split(',').map(l => l.trim()) : [],
-        status: 'todo',
-        assignee: 'Current User'
-      });
-    }
+    window.createTrelloCard = async function(data) {
+      if (!API_KEYS.trello.token) {
+        showToast('❌ Please configure Trello token first', 'error');
+        openConfig();
+        return;
+      }
+      
+      try {
+        const response = await fetch(`https://api.trello.com/1/cards?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: data.title,
+            desc: data.description,
+            due: data.dueDate,
+            idList: data.list,
+            pos: 'top'
+          })
+        });
+        
+        if (!response.ok) throw new Error('Failed to create card');
+        
+        const newCard = await response.json();
+        
+        // Add priority label if provided
+        if (data.priority && data.priority !== 'medium') {
+          const labelColor = data.priority === 'high' ? 'red' : 'green';
+          await fetch(`https://api.trello.com/1/cards/${newCard.id}/labels?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ color: labelColor, name: `Priority: ${data.priority}` })
+          });
+        }
+        
+        // Add to local items
+        const board = trelloBoards.find(b => b.id === data.board);
+        createItem('trello', {
+          id: newCard.id,
+          name: data.title,
+          desc: data.description,
+          due: data.dueDate,
+          priority: data.priority,
+          boardName: board ? board.name : 'Unknown Board',
+          labels: data.labels ? data.labels.split(',').map(l => l.trim()) : [],
+          status: 'in_progress'
+        });
+        
+        showToast('✅ Trello card created!', 'success');
+        return newCard;
+      } catch (error) {
+        showToast('❌ Error creating card: ' + error.message, 'error');
+      }
+    };
 
-    // Jira operations
-    async function createJiraIssue(data) {
+    window.createJiraIssue = async function(data) {
+      // Simulate Jira creation
       return createItem('jira', {
         key: `${data.project}-${Math.floor(Math.random() * 1000)}`,
         title: data.summary,
@@ -1021,10 +1156,9 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         issueType: data.type,
         due_date: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
       });
-    }
+    };
 
-    // Slack operations
-    async function sendSlackMessage(data) {
+    window.sendSlackMessage = async function(data) {
       return createItem('slack', {
         title: `${data.channel}: New message`,
         description: data.message,
@@ -1035,10 +1169,9 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         user: 'Current User',
         pinned: data.pin || false
       });
-    }
+    };
 
-    // Gmail operations
-    async function sendGmailEmail(data) {
+    window.sendGmailEmail = async function(data) {
       return createItem('gmail', {
         title: data.subject,
         description: data.body,
@@ -1049,20 +1182,19 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         date: new Date().toISOString().split('T')[0],
         important: data.important || false
       });
-    }
+    };
 
-    // DeepSeek operations
-    async function generateDeepSeekAnalysis() {
+    window.generateDeepSeekAnalysis = async function() {
       const type = document.getElementById('deepseek-type')?.value || 'summary';
       const focus = document.getElementById('deepseek-focus')?.value || 'all items';
       
       let analysis = '';
       switch(type) {
         case 'summary':
-          analysis = `Found ${allItems.length} total items across all sources. ${allItems.filter(i => i.priority === 'high').length} high priority, ${allItems.filter(i => i.status === 'in_progress' || i.status === 'In Progress').length} in progress.`;
+          analysis = `Found ${allItems.length} total items across all sources. ${allItems.filter(i => i.priority === 'high').length} high priority, ${allItems.filter(i => i.status === 'in_progress').length} in progress.`;
           break;
         case 'priorities':
-          analysis = `High priority items: ${allItems.filter(i => i.priority === 'high' || i.priority === 'High' || i.priority === 'Critical').map(i => `• ${i.title || i.name}`).join('\n')}`;
+          analysis = `High priority items: ${allItems.filter(i => i.priority === 'high').map(i => `• ${i.title || i.name}`).join('\n')}`;
           break;
         case 'deadlines':
           const overdue = allItems.filter(i => (i.due || i.due_date) && new Date(i.due || i.due_date) < new Date());
@@ -1086,7 +1218,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       addMessage('ai', `🔍 **DeepSeek Analysis**\n\n${analysis}`);
       closeCreateModal();
       return insight;
-    }
+    };
 
     // ========== MODAL HANDLERS ==========
     
@@ -1095,17 +1227,14 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       currentCreateSource = source;
       document.getElementById('modal-title').textContent = `Create New ${source.charAt(0).toUpperCase() + source.slice(1)} Item`;
       
-      // Show/hide forms
       document.querySelectorAll('.source-form').forEach(f => f.style.display = 'none');
       document.getElementById(`${source}-form`).style.display = 'block';
       
-      // Update tabs
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelector(`.tab[onclick*="${source}"]`).classList.add('active');
       
-      // Load Trello boards if needed
       if (source === 'trello') {
-        loadTrelloBoardsForModal();
+        loadTrelloBoards();
       }
       
       document.getElementById('create-modal').style.display = 'flex';
@@ -1170,7 +1299,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           
         case 'deepseek':
           await generateDeepSeekAnalysis();
-          return; // Already closes modal
+          return;
       }
       
       closeCreateModal();
@@ -1178,119 +1307,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
 
     window.showQuickCreate = function() {
       showCreateModal('trello', null);
-    };
-
-    // Edit modal
-    window.showEditModal = function(item) {
-      currentEditItem = item;
-      document.getElementById('edit-title').textContent = `Edit ${item.source} ${item.type || 'item'}`;
-      
-      let formHtml = '';
-      switch(item.source) {
-        case 'trello':
-          formHtml = `
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Title</label>
-              <input type="text" id="edit-title-field" value="${escapeHtml(item.name)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Description</label>
-              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.desc || '')}</textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Due Date</label>
-              <input type="date" id="edit-due-field" value="${item.due || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Priority</label>
-              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-                <option value="low" ${item.priority === 'low' ? 'selected' : ''}>Low</option>
-                <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                <option value="high" ${item.priority === 'high' ? 'selected' : ''}>High</option>
-              </select>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Status</label>
-              <input type="text" id="edit-status-field" value="${item.status || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-          `;
-          break;
-          
-        case 'jira':
-          formHtml = `
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Summary</label>
-              <input type="text" id="edit-title-field" value="${escapeHtml(item.title)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Description</label>
-              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.description || '')}</textarea>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Status</label>
-              <input type="text" id="edit-status-field" value="${item.status}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Priority</label>
-              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-                <option value="Low" ${item.priority === 'Low' ? 'selected' : ''}>Low</option>
-                <option value="Medium" ${item.priority === 'Medium' ? 'selected' : ''}>Medium</option>
-                <option value="High" ${item.priority === 'High' ? 'selected' : ''}>High</option>
-                <option value="Critical" ${item.priority === 'Critical' ? 'selected' : ''}>Critical</option>
-              </select>
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="display:block;margin-bottom:8px;">Assignee</label>
-              <input type="text" id="edit-assignee-field" value="${item.assignee || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
-            </div>
-          `;
-          break;
-          
-        default:
-          formHtml = '<p>Edit form for this source coming soon</p>';
-      }
-      
-      document.getElementById('edit-form-container').innerHTML = formHtml;
-      document.getElementById('edit-modal').style.display = 'flex';
-    };
-
-    window.closeEditModal = function() {
-      document.getElementById('edit-modal').style.display = 'none';
-      currentEditItem = null;
-    };
-
-    window.updateItem = function() {
-      if (!currentEditItem) return;
-      
-      const updates = {};
-      
-      switch(currentEditItem.source) {
-        case 'trello':
-          updates.name = document.getElementById('edit-title-field').value;
-          updates.desc = document.getElementById('edit-desc-field').value;
-          updates.due = document.getElementById('edit-due-field').value;
-          updates.priority = document.getElementById('edit-priority-field').value;
-          updates.status = document.getElementById('edit-status-field').value;
-          break;
-          
-        case 'jira':
-          updates.title = document.getElementById('edit-title-field').value;
-          updates.description = document.getElementById('edit-desc-field').value;
-          updates.status = document.getElementById('edit-status-field').value;
-          updates.priority = document.getElementById('edit-priority-field').value;
-          updates.assignee = document.getElementById('edit-assignee-field').value;
-          break;
-      }
-      
-      updateItemById(currentEditItem.id, updates);
-      closeEditModal();
-    };
-
-    window.deleteItem = function() {
-      if (currentEditItem && confirm(`Delete this ${currentEditItem.source} item?`)) {
-        deleteItemById(currentEditItem.id);
-        closeEditModal();
-      }
     };
 
     // ========== FILTER ==========
@@ -1406,7 +1422,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         const dueDate = item.due || item.due_date;
         const sourceClass = item.source || 'trello';
         
-        html += `<div class="task-card" onclick="showEditModal(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+        html += `<div class="task-card" onclick='showEditModal(${JSON.stringify(item).replace(/'/g, "\\'")})'>
           <div class="card-header">
             <span class="source-badge ${sourceClass}">${sourceClass}</span>
             <div class="card-title">${escapeHtml(title.substring(0,50))}</div>
@@ -1423,7 +1439,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           ${item.boardName ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;">📋 ${escapeHtml(item.boardName)}</div>` : ''}
           ${item.project ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;">🔷 ${item.project}</div>` : ''}
           <div class="item-actions">
-            <button class="item-action-btn" onclick="event.stopPropagation(); showEditModal(${JSON.stringify(item).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Edit</button>
+            <button class="item-action-btn" onclick="event.stopPropagation(); showEditModal(${JSON.stringify(item).replace(/'/g, "\\'")})"><i class="fas fa-edit"></i> Edit</button>
             <button class="item-action-btn" onclick="event.stopPropagation(); deleteItemById('${item.id}')"><i class="fas fa-trash"></i></button>
           </div>
         </div>`;
@@ -1480,7 +1496,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         const title = task.name || task.title || task.key || 'Task';
         
         html += `<div class="gantt-row">
-          <div class="gantt-task-name" onclick="showEditModal(${JSON.stringify(task).replace(/"/g, '&quot;')})">${escapeHtml(title.substring(0,20))}</div>
+          <div class="gantt-task-name" onclick='showEditModal(${JSON.stringify(task).replace(/'/g, "\\'")})'>${escapeHtml(title.substring(0,20))}</div>
           <div class="gantt-bar-container">
             <div class="gantt-bar" style="left:${position}%; width:${Math.max(10, 30 - dayDiff/2)}px;" data-task="${task.id}"></div>
           </div>
@@ -1504,6 +1520,120 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       }, 100);
     }
 
+    // ========== EDIT MODAL ==========
+    
+    window.showEditModal = function(item) {
+      currentEditItem = item;
+      document.getElementById('edit-title').textContent = `Edit ${item.source} ${item.type || 'item'}`;
+      
+      let formHtml = '';
+      switch(item.source) {
+        case 'trello':
+          formHtml = `
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Title</label>
+              <input type="text" id="edit-title-field" value="${escapeHtml(item.name)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Description</label>
+              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.desc || '')}</textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Due Date</label>
+              <input type="date" id="edit-due-field" value="${item.due || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Priority</label>
+              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+                <option value="low" ${item.priority === 'low' ? 'selected' : ''}>Low</option>
+                <option value="medium" ${item.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                <option value="high" ${item.priority === 'high' ? 'selected' : ''}>High</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Status</label>
+              <input type="text" id="edit-status-field" value="${item.status || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+          `;
+          break;
+          
+        case 'jira':
+          formHtml = `
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Summary</label>
+              <input type="text" id="edit-title-field" value="${escapeHtml(item.title)}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Description</label>
+              <textarea id="edit-desc-field" rows="3" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">${escapeHtml(item.description || '')}</textarea>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Status</label>
+              <input type="text" id="edit-status-field" value="${item.status}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Priority</label>
+              <select id="edit-priority-field" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+                <option value="Low" ${item.priority === 'Low' ? 'selected' : ''}>Low</option>
+                <option value="Medium" ${item.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                <option value="High" ${item.priority === 'High' ? 'selected' : ''}>High</option>
+                <option value="Critical" ${item.priority === 'Critical' ? 'selected' : ''}>Critical</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;">Assignee</label>
+              <input type="text" id="edit-assignee-field" value="${item.assignee || ''}" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;">
+            </div>
+          `;
+          break;
+          
+        default:
+          formHtml = '<p>Edit form for this source coming soon</p>';
+      }
+      
+      document.getElementById('edit-form-container').innerHTML = formHtml;
+      document.getElementById('edit-modal').style.display = 'flex';
+    };
+
+    window.closeEditModal = function() {
+      document.getElementById('edit-modal').style.display = 'none';
+      currentEditItem = null;
+    };
+
+    window.updateItem = function() {
+      if (!currentEditItem) return;
+      
+      const updates = {};
+      
+      switch(currentEditItem.source) {
+        case 'trello':
+          updates.name = document.getElementById('edit-title-field').value;
+          updates.desc = document.getElementById('edit-desc-field').value;
+          updates.due = document.getElementById('edit-due-field').value;
+          updates.priority = document.getElementById('edit-priority-field').value;
+          updates.status = document.getElementById('edit-status-field').value;
+          break;
+          
+        case 'jira':
+          updates.title = document.getElementById('edit-title-field').value;
+          updates.description = document.getElementById('edit-desc-field').value;
+          updates.status = document.getElementById('edit-status-field').value;
+          updates.priority = document.getElementById('edit-priority-field').value;
+          updates.assignee = document.getElementById('edit-assignee-field').value;
+          break;
+      }
+      
+      updateItemById(currentEditItem.id, updates);
+      closeEditModal();
+    };
+
+    window.deleteItem = function() {
+      if (currentEditItem && confirm(`Delete this ${currentEditItem.source} item?`)) {
+        deleteItemById(currentEditItem.id);
+        closeEditModal();
+      }
+    };
+
     // ========== AI CHAT ==========
     window.sendMessage = function() {
       const input = document.getElementById('chat-input');
@@ -1517,14 +1647,12 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         const lowerText = text.toLowerCase();
         let response = '';
         
-        // Trello creation
         if (lowerText.includes('trello') && (lowerText.includes('create') || lowerText.includes('new'))) {
           const title = text.replace(/.*create.*?(?:card|task)?\s*(?:called|named)?\s*["']?([^"']+)["']?/i, '$1') || 'New Task';
           await createTrelloCard({ title, description: 'Created via AI', priority: 'medium' });
           response = `✅ Created new Trello card: "${title}"`;
         }
         
-        // Jira creation
         else if (lowerText.includes('jira') && (lowerText.includes('create') || lowerText.includes('new'))) {
           const summary = text.replace(/.*create.*?(?:issue|ticket)?\s*(?:called|named)?\s*["']?([^"']+)["']?/i, '$1') || 'New Issue';
           await createJiraIssue({ 
@@ -1537,7 +1665,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           response = `✅ Created new Jira issue: "${summary}"`;
         }
         
-        // Slack message
         else if (lowerText.includes('slack') && lowerText.includes('send')) {
           const channelMatch = text.match(/#(\w+)|@(\w+)/);
           const channel = channelMatch ? channelMatch[0] : '#general';
@@ -1546,7 +1673,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           response = `✅ Sent Slack message to ${channel}`;
         }
         
-        // Gmail send
         else if (lowerText.includes('email') || (lowerText.includes('gmail') && lowerText.includes('send'))) {
           const toMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
           const to = toMatch ? toMatch[0] : 'team@company.com';
@@ -1555,7 +1681,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           response = `✅ Sent email to ${to}`;
         }
         
-        // Analysis
         else if (lowerText.includes('analyze') || lowerText.includes('summary')) {
           const highCount = allItems.filter(i => (i.priority || '').toLowerCase() === 'high' || i.priority === 'Critical').length;
           const overdueCount = allItems.filter(i => {
@@ -1575,7 +1700,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
                     `**In Progress:** ${allItems.filter(i => (i.status || '').toLowerCase().includes('progress')).length}`;
         }
         
-        // Default
         else {
           response = `🤖 **Universal AI Controller**\n\nI can help you manage all your sources. Try:\n` +
                     `• "Create a new Trello card for Q4 planning"\n` +
@@ -1601,26 +1725,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div>`;
       area.appendChild(div); 
       area.scrollTop = area.scrollHeight;
-    }
-
-    // ========== TRELLO BOARD LOADING ==========
-    async function loadTrelloBoardsForModal() {
-      const select = document.getElementById('trello-board');
-      if (!select) return;
-      
-      select.innerHTML = '<option value="Product Development">Product Development</option><option value="Marketing">Marketing</option><option value="Engineering">Engineering</option>';
-      
-      // Update list based on selection
-      document.getElementById('trello-board').addEventListener('change', function(e) {
-        const listSelect = document.getElementById('trello-list');
-        if (e.target.value === 'Product Development') {
-          listSelect.innerHTML = '<option value="Backlog">Backlog</option><option value="In Progress">In Progress</option><option value="Review">Review</option><option value="Done">Done</option>';
-        } else if (e.target.value === 'Marketing') {
-          listSelect.innerHTML = '<option value="Ideas">Ideas</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>';
-        } else {
-          listSelect.innerHTML = '<option value="To Do">To Do</option><option value="Doing">Doing</option><option value="Done">Done</option>';
-        }
-      });
     }
 
     // ========== EXPORT ==========
@@ -1697,21 +1801,27 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       btn.disabled = true; 
       icon.className = 'fas fa-sync-alt spin';
       
-      setTimeout(() => {
-        showToast('✅ All sources synced', 'success');
+      Promise.all([
+        loadTrelloCards()
+      ]).then(() => {
         btn.disabled = false; 
         icon.className = 'fas fa-sync-alt';
-        filterItems();
-      }, 1500);
+        showToast('✅ All sources synced', 'success');
+      }).catch(error => {
+        btn.disabled = false; 
+        icon.className = 'fas fa-sync-alt';
+        showToast('❌ Sync failed: ' + error.message, 'error');
+      });
     };
 
     // ========== UI ==========
     window.openConfig = function() { 
-      alert('Configuration panel - API keys are pre-configured for demo');
+      document.getElementById('trello-token-input').value = TRELLO_TOKEN;
+      document.getElementById('config-modal').style.display = 'flex'; 
     };
     
     window.closeConfig = function() { 
-      // Not needed
+      document.getElementById('config-modal').style.display = 'none'; 
     };
     
     window.toggleSidebar = function() { 
@@ -1728,13 +1838,41 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       ev.target.closest('button').classList.add('active');
     };
 
-    // Make delete function globally available
-    window.deleteItemById = deleteItemById;
+    // Helper
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.borderColor = type === 'success' ? '#00d4aa' : type === 'error' ? '#ff4757' : '#6c63ff';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
 
     // ========== INIT ==========
     window.onload = function() {
       setTheme(theme, { target: document.querySelector('.theme-toggle button') });
-      updateConnectionDots();
+      
+      // Update connection status
+      if (API_KEYS.trello.token) {
+        document.getElementById('trello-dot').className = 'source-dot connected';
+        loadTrelloBoards();
+        loadTrelloCards();
+        document.getElementById('ai-source-status').innerHTML = 'Loading Trello boards...';
+      } else {
+        document.getElementById('trello-dot').className = 'source-dot disconnected';
+        document.getElementById('ai-source-status').innerHTML = 'Configure Trello token in Config';
+      }
       
       filterItems();
       showToast('👋 Welcome to UnifyAI Universal Management System', 'info');

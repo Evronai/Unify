@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>UnifyAI Pro — Universal Management System (Fully Working)</title>
+  <title>UnifyAI Pro — Real Trello Integration</title>
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -491,8 +491,8 @@
     <button class="nav-btn" onclick="openConfig()">⚙ Config</button>
   </nav>
   <div class="theme-toggle">
-    <button class="active" onclick="setTheme('dark')"><i class="fas fa-moon"></i></button>
-    <button onclick="setTheme('light')"><i class="fas fa-sun"></i></button>
+    <button class="active" onclick="setTheme('dark', event)"><i class="fas fa-moon"></i></button>
+    <button onclick="setTheme('light', event)"><i class="fas fa-sun"></i></button>
   </div>
 </header>
 
@@ -504,12 +504,12 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
-      <div class="source-card active" onclick="filterSource('all', this)">
+      <div class="source-card active" onclick="filterSource('all')">
         <div class="source-dot" style="background: var(--accent);"></div>
         <span class="source-card-name">All Items</span>
         <span class="source-card-count" id="count-all">0</span>
       </div>
-      <div class="source-card" onclick="filterSource('trello', this)">
+      <div class="source-card" onclick="filterSource('trello')">
         <div class="source-dot" style="background: var(--trello);" id="trello-dot"></div>
         <span class="source-card-name">Trello</span>
         <span class="source-card-count" id="count-trello">0</span>
@@ -518,7 +518,7 @@
           <button class="action-btn" onclick="refreshTrelloBoards(event)"><i class="fas fa-sync-alt"></i></button>
         </div>
       </div>
-      <div class="source-card" onclick="filterSource('jira', this)">
+      <div class="source-card" onclick="filterSource('jira')">
         <div class="source-dot connected" style="background: var(--jira);" id="jira-dot"></div>
         <span class="source-card-name">Jira</span>
         <span class="source-card-count" id="count-jira">0</span>
@@ -526,7 +526,7 @@
           <button class="action-btn" onclick="showCreateModal('jira', event)"><i class="fas fa-plus"></i></button>
         </div>
       </div>
-      <div class="source-card" onclick="filterSource('slack', this)">
+      <div class="source-card" onclick="filterSource('slack')">
         <div class="source-dot connected" style="background: var(--slack);" id="slack-dot"></div>
         <span class="source-card-name">Slack</span>
         <span class="source-card-count" id="count-slack">0</span>
@@ -534,7 +534,7 @@
           <button class="action-btn" onclick="showCreateModal('slack', event)"><i class="fas fa-plus"></i></button>
         </div>
       </div>
-      <div class="source-card" onclick="filterSource('gmail', this)">
+      <div class="source-card" onclick="filterSource('gmail')">
         <div class="source-dot connected" style="background: var(--gmail);" id="gmail-dot"></div>
         <span class="source-card-name">Gmail</span>
         <span class="source-card-count" id="count-gmail">0</span>
@@ -542,7 +542,7 @@
           <button class="action-btn" onclick="showCreateModal('gmail', event)"><i class="fas fa-plus"></i></button>
         </div>
       </div>
-      <div class="source-card" onclick="filterSource('deepseek', this)">
+      <div class="source-card" onclick="filterSource('deepseek')">
         <div class="source-dot" style="background: var(--deepseek);" id="deepseek-dot"></div>
         <span class="source-card-name">DeepSeek AI</span>
         <span class="source-card-count" id="count-deepseek">0</span>
@@ -554,17 +554,17 @@
 
     <div class="sidebar-section">
       <div class="sidebar-label">Priority</div>
-      <div class="source-card" onclick="filterPriority('high', this)">
+      <div class="source-card" onclick="filterPriority('high')">
         <div class="source-dot" style="background: var(--danger);"></div>
         <span class="source-card-name">High Priority</span>
         <span class="source-card-count" id="count-high">0</span>
       </div>
-      <div class="source-card" onclick="filterPriority('medium', this)">
+      <div class="source-card" onclick="filterPriority('medium')">
         <div class="source-dot" style="background: var(--warn);"></div>
         <span class="source-card-name">Medium</span>
         <span class="source-card-count" id="count-medium">0</span>
       </div>
-      <div class="source-card" onclick="filterPriority('low', this)">
+      <div class="source-card" onclick="filterPriority('low')">
         <div class="source-dot" style="background: var(--accent2);"></div>
         <span class="source-card-name">Low</span>
         <span class="source-card-count" id="count-low">0</span>
@@ -637,9 +637,9 @@
     <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> API Configuration</h2>
     
     <div class="tab-container">
-      <div class="tab active" onclick="switchConfigTab('trello', this)">Trello</div>
-      <div class="tab" onclick="switchConfigTab('deepseek', this)">DeepSeek AI</div>
-      <div class="tab" onclick="switchConfigTab('other', this)">Other</div>
+      <div class="tab active" onclick="switchConfigTab('trello')">Trello</div>
+      <div class="tab" onclick="switchConfigTab('deepseek')">DeepSeek AI</div>
+      <div class="tab" onclick="switchConfigTab('other')">Other</div>
     </div>
     
     <!-- Trello Config -->
@@ -650,12 +650,14 @@
         <div style="margin-bottom: 16px;">
           <label style="display: block; margin-bottom: 8px; color: var(--muted);">Trello Token</label>
           <input type="text" id="trello-token-input" class="token-input" placeholder="Paste your Trello token (ATT...)" value="">
-          <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Save Token & Load Boards</button>
+          <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Validate & Save Token</button>
         </div>
         
         <div style="margin-top: 16px;">
           <p style="color: var(--muted); font-size: 12px;">Don't have a token? <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=223cdeaf54b7f1b742389ef7784de5ef" target="_blank" style="color: var(--accent);">Generate one here</a></p>
         </div>
+        
+        <div id="trello-connection-status" style="margin-top: 16px; padding: 12px; border-radius: 6px; display: none;"></div>
       </div>
     </div>
     
@@ -712,11 +714,11 @@
     <h2 style="margin-bottom: 20px;" id="modal-title">Create New Item</h2>
     
     <div class="tab-container" id="source-tabs">
-      <div class="tab active" onclick="switchSourceTab('trello', this)">Trello</div>
-      <div class="tab" onclick="switchSourceTab('jira', this)">Jira</div>
-      <div class="tab" onclick="switchSourceTab('slack', this)">Slack</div>
-      <div class="tab" onclick="switchSourceTab('gmail', this)">Gmail</div>
-      <div class="tab" onclick="switchSourceTab('deepseek', this)">DeepSeek</div>
+      <div class="tab active" onclick="switchSourceTab('trello')">Trello</div>
+      <div class="tab" onclick="switchSourceTab('jira')">Jira</div>
+      <div class="tab" onclick="switchSourceTab('slack')">Slack</div>
+      <div class="tab" onclick="switchSourceTab('gmail')">Gmail</div>
+      <div class="tab" onclick="switchSourceTab('deepseek')">DeepSeek</div>
     </div>
     
     <!-- Trello Form -->
@@ -748,17 +750,9 @@
           <input type="date" id="trello-due" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority</label>
-          <select id="trello-priority" class="board-selector" style="padding: 10px;">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-          </select>
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority (as label)</label>
+          <input type="text" id="trello-priority-label" placeholder="e.g., High, Medium, Low" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
         </div>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Labels (comma separated)</label>
-        <input type="text" id="trello-labels" placeholder="e.g., bug, feature, urgent" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
     </div>
     
@@ -980,7 +974,7 @@
 <div class="toast-container" id="toast-container"></div>
 
 <script>
-  // Global state
+  // REAL TRELLO INTEGRATION
   let tasks = [];
   let currentView = 'grid';
   let currentSource = 'all';
@@ -990,105 +984,44 @@
   let calendar = null;
   let trelloBoards = [];
   let trelloToken = localStorage.getItem('trelloToken') || '';
+  const TRELLO_API_KEY = '223cdeaf54b7f1b742389ef7784de5ef';
   let deepseekConfig = {
     apiKey: localStorage.getItem('deepseekApiKey') || '',
     endpoint: localStorage.getItem('deepseekEndpoint') || 'https://api.deepseek.com/v1/chat/completions',
     model: localStorage.getItem('deepseekModel') || 'deepseek-chat'
   };
-  
-  // Initialize
+
   document.addEventListener('DOMContentLoaded', function() {
     loadSampleData();
     updateStats();
     renderView();
-    loadTrelloBoards();
-    loadDeepSeekCards();
-    
-    // Set up event listeners
-    document.getElementById('search-input').addEventListener('input', filterItems);
-    
-    // Check for saved theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setTheme('light');
-    }
-    
-    // Load Trello token if exists
     if (trelloToken) {
       document.getElementById('trello-token-input').value = trelloToken;
+      loadTrelloBoards();
+      loadTrelloCards();
     }
-    
-    // Load DeepSeek config
+    document.getElementById('search-input').addEventListener('input', filterItems);
+    initDragAndDrop();
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') setTheme('light');
     if (deepseekConfig.apiKey) {
       document.getElementById('deepseek-api-key').value = deepseekConfig.apiKey;
       document.getElementById('deepseek-endpoint').value = deepseekConfig.endpoint;
       document.getElementById('deepseek-model').value = deepseekConfig.model;
     }
   });
-  
-  // Load sample data
+
   function loadSampleData() {
     tasks = [
-      {
-        id: '1',
-        title: 'Design System Implementation',
-        description: 'Create a comprehensive design system with components and documentation',
-        source: 'trello',
-        priority: 'high',
-        status: 'in_progress',
-        dueDate: '2025-03-20',
-        assignee: '@jane',
-        labels: ['design', 'frontend']
-      },
-      {
-        id: '2',
-        title: 'API Integration Testing',
-        description: 'Test all API endpoints and ensure proper error handling',
-        source: 'jira',
-        priority: 'medium',
-        status: 'todo',
-        dueDate: '2025-03-25',
-        assignee: '@john',
-        labels: ['backend', 'testing']
-      },
-      {
-        id: '3',
-        title: 'User Research Sessions',
-        description: 'Conduct user interviews and compile findings',
-        source: 'slack',
-        priority: 'high',
-        status: 'done',
-        dueDate: '2025-03-15',
-        assignee: '@sarah',
-        labels: ['research', 'ux']
-      },
-      {
-        id: '4',
-        title: 'Q1 Financial Review',
-        description: 'Review Q1 financial reports and prepare summary',
-        source: 'gmail',
-        priority: 'medium',
-        status: 'todo',
-        dueDate: '2025-03-28',
-        assignee: '@mike',
-        labels: ['finance']
-      },
-      {
-        id: '5',
-        title: 'AI Model Optimization',
-        description: 'Optimize AI models for better performance',
-        source: 'deepseek',
-        priority: 'high',
-        status: 'in_progress',
-        dueDate: '2025-03-22',
-        assignee: '@alex',
-        labels: ['ai', 'ml']
-      }
+      { id: '1', title: 'Design System Implementation', description: 'Create a comprehensive design system with components', source: 'trello', priority: 'high', status: 'in_progress', dueDate: '2025-03-20', assignee: '@jane', labels: ['design'] },
+      { id: '2', title: 'API Integration Testing', description: 'Test all API endpoints', source: 'jira', priority: 'medium', status: 'todo', dueDate: '2025-03-25', assignee: '@john', labels: ['backend'] },
+      { id: '3', title: 'User Research Sessions', description: 'Conduct user interviews', source: 'slack', priority: 'high', status: 'done', dueDate: '2025-03-15', assignee: '@sarah', labels: ['research'] },
+      { id: '4', title: 'Q1 Financial Review', description: 'Review Q1 financial reports', source: 'gmail', priority: 'medium', status: 'todo', dueDate: '2025-03-28', assignee: '@mike', labels: ['finance'] },
+      { id: '5', title: 'AI Model Optimization', description: 'Optimize AI models', source: 'deepseek', priority: 'high', status: 'in_progress', dueDate: '2025-03-22', assignee: '@alex', labels: ['ai'] }
     ];
     updateCounts();
   }
-  
-  // Update source counts
+
   function updateCounts() {
     document.getElementById('count-all').innerText = tasks.length;
     document.getElementById('count-trello').innerText = tasks.filter(t => t.source === 'trello').length;
@@ -1096,1173 +1029,848 @@
     document.getElementById('count-slack').innerText = tasks.filter(t => t.source === 'slack').length;
     document.getElementById('count-gmail').innerText = tasks.filter(t => t.source === 'gmail').length;
     document.getElementById('count-deepseek').innerText = tasks.filter(t => t.source === 'deepseek').length;
-    
     document.getElementById('count-high').innerText = tasks.filter(t => t.priority === 'high').length;
     document.getElementById('count-medium').innerText = tasks.filter(t => t.priority === 'medium').length;
     document.getElementById('count-low').innerText = tasks.filter(t => t.priority === 'low').length;
   }
-  
-  // Update stats
+
   function updateStats() {
     document.getElementById('stat-total').innerText = tasks.length;
     document.getElementById('stat-inprogress').innerText = tasks.filter(t => t.status === 'in_progress').length;
     document.getElementById('stat-done').innerText = tasks.filter(t => t.status === 'done').length;
-    
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('stat-overdue').innerText = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
   }
-  
-  // Render current view
-  function renderView() {
-    const contentArea = document.getElementById('content-area');
-    const filteredTasks = getFilteredTasks();
-    
-    if (currentView === 'grid') {
-      renderGrid(filteredTasks);
-    } else if (currentView === 'calendar') {
-      renderCalendar(filteredTasks);
-    } else if (currentView === 'gantt') {
-      renderGantt(filteredTasks);
-    }
-  }
-  
-  // Get filtered tasks based on all filters
+
   function getFilteredTasks() {
     return tasks.filter(task => {
-      // Source filter
       if (currentSource !== 'all' && task.source !== currentSource) return false;
-      
-      // Priority filter
       if (currentPriority !== 'all' && task.priority !== currentPriority) return false;
-      
-      // Status filter
       if (currentStatus !== 'all' && task.status !== currentStatus) return false;
-      
-      // Search filter
-      if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-          !task.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      
+      if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && !task.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     });
   }
-  
-  // Render grid view
+
+  function renderView() {
+    const filtered = getFilteredTasks();
+    if (currentView === 'grid') renderGrid(filtered);
+    else if (currentView === 'calendar') renderCalendar(filtered);
+    else if (currentView === 'gantt') renderGantt(filtered);
+  }
+
   function renderGrid(tasks) {
-    const contentArea = document.getElementById('content-area');
     let html = '<div class="tasks-grid">';
-    
     tasks.forEach(task => {
       const isOverdue = task.dueDate && task.dueDate < new Date().toISOString().split('T')[0] && task.status !== 'done';
-      
-      html += `
-        <div class="task-card" onclick="openTaskDetails('${task.id}')">
-          <div class="card-header">
-            <span class="source-badge ${task.source}">${task.source.toUpperCase()}</span>
-            <span class="card-title">${task.title}</span>
-          </div>
-          <div class="card-meta">
-            <span class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</span>
-            <span class="status-badge">${task.status.replace('_', ' ')}</span>
-          </div>
-          <div class="card-desc">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</div>
-          <div class="card-footer">
-            <span class="assignee"><i class="fas fa-user"></i> ${task.assignee}</span>
-            <span class="due-date ${isOverdue ? 'overdue' : ''}"><i class="far fa-calendar"></i> ${task.dueDate || 'No due date'}</span>
-          </div>
-          <div class="item-actions">
-            <button class="item-action-btn" onclick="editTask('${task.id}', event)"><i class="fas fa-edit"></i></button>
-            <button class="item-action-btn" onclick="deleteTask('${task.id}', event)"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-      `;
+      html += `<div class="task-card" onclick="openTaskDetails('${task.id}')">
+        <div class="card-header"><span class="source-badge ${task.source}">${task.source.toUpperCase()}</span><span class="card-title">${task.title}</span></div>
+        <div class="card-meta"><span class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</span><span class="status-badge">${task.status.replace('_',' ')}</span></div>
+        <div class="card-desc">${task.description.substring(0,80)}...</div>
+        <div class="card-footer"><span class="assignee"><i class="fas fa-user"></i> ${task.assignee}</span><span class="due-date ${isOverdue?'overdue':''}"><i class="far fa-calendar"></i> ${task.dueDate||'No due'}</span></div>
+        <div class="item-actions"><button class="item-action-btn" onclick="editTask('${task.id}', event)"><i class="fas fa-edit"></i></button><button class="item-action-btn" onclick="deleteTask('${task.id}', event)"><i class="fas fa-trash"></i></button></div>
+      </div>`;
     });
-    
     html += '</div>';
-    contentArea.innerHTML = html;
+    document.getElementById('content-area').innerHTML = html;
   }
-  
-  // Render calendar view
+
   function renderCalendar(tasks) {
-    const contentArea = document.getElementById('content-area');
-    contentArea.innerHTML = '<div class="calendar-view"><div id="calendar"></div></div>';
-    
+    document.getElementById('content-area').innerHTML = '<div class="calendar-view"><div id="calendar"></div></div>';
     const calendarEl = document.getElementById('calendar');
-    if (calendar) {
-      calendar.destroy();
-    }
+    if (calendar) calendar.destroy();
     calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      themeSystem: 'standard',
-      events: tasks.filter(t => t.dueDate).map(task => ({
-        title: task.title,
-        start: task.dueDate,
-        extendedProps: { task },
-        color: task.priority === 'high' ? '#ff4757' : task.priority === 'medium' ? '#ffa502' : '#00d4aa'
-      })),
-      eventClick: function(info) {
-        openTaskDetails(info.event.extendedProps.task.id);
-      }
+      initialView: 'dayGridMonth', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+      events: tasks.filter(t => t.dueDate).map(task => ({ title: task.title, start: task.dueDate, extendedProps: { task }, color: task.priority === 'high' ? '#ff4757' : task.priority === 'medium' ? '#ffa502' : '#00d4aa' })),
+      eventClick: info => openTaskDetails(info.event.extendedProps.task.id)
     });
     calendar.render();
   }
-  
-  // Render Gantt view
+
   function renderGantt(tasks) {
-    const contentArea = document.getElementById('content-area');
     let html = '<div class="gantt-view"><div class="gantt-header"><div class="gantt-task-name">Task</div><div style="flex:1">Timeline</div></div>';
-    
-    tasks.forEach((task, index) => {
-      const width = task.priority === 'high' ? 80 : task.priority === 'medium' ? 60 : 40;
-      
-      html += `
-        <div class="gantt-row" data-task-id="${task.id}">
-          <div class="gantt-task-name">${task.title}</div>
-          <div class="gantt-bar-container">
-            <div class="gantt-bar" style="left: 0px; width: ${width}px; background: linear-gradient(90deg, ${task.priority === 'high' ? '#ff4757' : task.priority === 'medium' ? '#ffa502' : '#00d4aa'}, ${task.source === 'trello' ? '#0079BF' : '#6c63ff'})"></div>
-          </div>
-        </div>
-      `;
+    tasks.forEach(task => {
+      let width = task.priority === 'high' ? 80 : task.priority === 'medium' ? 60 : 40;
+      html += `<div class="gantt-row" data-task-id="${task.id}"><div class="gantt-task-name">${task.title}</div><div class="gantt-bar-container"><div class="gantt-bar" style="left:0px; width: ${width}px; background: linear-gradient(90deg, ${task.priority==='high'?'#ff4757':task.priority==='medium'?'#ffa502':'#00d4aa'}, #6c63ff)"></div></div></div>`;
     });
-    
     html += '</div>';
-    contentArea.innerHTML = html;
-    
-    // Initialize drag and drop for Gantt bars
+    document.getElementById('content-area').innerHTML = html;
     initGanttDragDrop();
   }
-  
-  // Initialize Gantt drag and drop
+
   function initGanttDragDrop() {
     interact('.gantt-bar').draggable({
       listeners: {
-        move: function(event) {
-          const target = event.target;
-          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-          
+        move(event) {
+          let target = event.target;
+          let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
           target.style.transform = `translateX(${x}px)`;
           target.setAttribute('data-x', x);
         },
-        end: function(event) {
-          const row = event.target.closest('.gantt-row');
-          if (row) {
-            const taskId = row.dataset.taskId;
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-              showToast(`Task "${task.title}" moved`, 'info');
-            }
-          }
+        end(event) {
+          let row = event.target.closest('.gantt-row');
+          if (row) { let taskId = row.dataset.taskId; let task = tasks.find(t => t.id === taskId); if (task) showToast(`Task "${task.title}" moved`, 'info'); }
         }
       }
     });
   }
+
+  function setView(view, e) { e.preventDefault(); currentView = view; document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); renderView(); }
+  function filterSource(s) { currentSource = s; document.querySelectorAll('.source-card').forEach(c=>c.classList.remove('active')); event.currentTarget.classList.add('active'); renderView(); }
+  function filterPriority(p) { currentPriority = p; document.querySelectorAll('.source-card').forEach(c=>c.classList.remove('active')); event.currentTarget.classList.add('active'); renderView(); }
+  function filterStatus(s, btn) { currentStatus = s; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderView(); }
+  function filterItems() { searchQuery = document.getElementById('search-input').value; renderView(); }
   
-  // Set view
-  function setView(view, event) {
-    if (event) event.preventDefault();
-    
-    currentView = view;
-    
-    // Update active button
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    renderView();
-  }
-  
-  // Filter by source
-  function filterSource(source, element) {
-    currentSource = source;
-    
-    // Update active source card
-    document.querySelectorAll('.source-card').forEach(card => {
-      card.classList.remove('active');
-    });
-    element.classList.add('active');
-    
-    renderView();
-  }
-  
-  // Filter by priority
-  function filterPriority(priority, element) {
-    currentPriority = priority;
-    
-    // Update active priority card
-    document.querySelectorAll('.source-card').forEach(card => {
-      card.classList.remove('active');
-    });
-    element.classList.add('active');
-    
-    renderView();
-  }
-  
-  // Filter by status
-  function filterStatus(status, btn) {
-    currentStatus = status;
-    
-    // Update active button
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    btn.classList.add('active');
-    
-    renderView();
-  }
-  
-  // Filter items by search
-  function filterItems() {
-    searchQuery = document.getElementById('search-input').value;
-    renderView();
-  }
-  
-  // Sync all sources
   function syncAll() {
-    const syncBtn = document.getElementById('sync-btn');
-    const syncIcon = document.getElementById('sync-icon');
+    let btn = document.getElementById('sync-btn'), icon = document.getElementById('sync-icon');
+    btn.disabled = true; icon.classList.add('spin');
     
-    syncBtn.disabled = true;
-    syncIcon.classList.add('spin');
+    Promise.all([
+      trelloToken ? loadTrelloCards(true) : Promise.resolve(),
+      new Promise(resolve => setTimeout(resolve, 1000))
+    ]).then(() => {
+      btn.disabled = false; icon.classList.remove('spin');
+      showToast('All sources synced!','success');
+    });
+  }
+  
+  function openConfig() { document.getElementById('config-modal').style.display = 'flex'; }
+  function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
+  function switchConfigTab(tab) {
+    document.querySelectorAll('#config-modal .tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('#config-modal .config-section').forEach(s=>s.style.display='none');
+    event.target.classList.add('active'); document.getElementById(`config-${tab}`).style.display='block';
+  }
+  
+  // REAL TRELLO FUNCTIONS
+  function saveTrelloToken() {
+    let token = document.getElementById('trello-token-input').value.trim();
+    let statusDiv = document.getElementById('trello-connection-status');
     
-    // Simulate sync
-    setTimeout(() => {
-      syncBtn.disabled = false;
-      syncIcon.classList.remove('spin');
-      showToast('All sources synced successfully!', 'success');
-      
-      // Reload Trello boards
-      loadTrelloBoards();
-      
-      // Update sample data with new items
-      const newTask = {
-        id: Date.now().toString(),
-        title: 'Synced Task ' + new Date().toLocaleTimeString(),
-        description: 'Automatically created during sync',
-        source: ['trello', 'jira', 'slack'][Math.floor(Math.random() * 3)],
-        priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+    if(!token) {
+      showToast('Please enter a token', 'error');
+      return;
+    }
+    
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = '⏳ Validating token...';
+    statusDiv.style.background = 'rgba(255,165,2,0.1)';
+    
+    // Validate token by making a test API call
+    fetch(`https://api.trello.com/1/members/me?key=${TRELLO_API_KEY}&token=${token}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Invalid token');
+        }
+        return response.json();
+      })
+      .then(data => {
+        trelloToken = token;
+        localStorage.setItem('trelloToken', token);
+        
+        statusDiv.innerHTML = `✅ Connected as ${data.fullName} (${data.username})`;
+        statusDiv.style.background = 'rgba(0,212,170,0.1)';
+        
+        showToast('Token validated and saved', 'success');
+        loadTrelloBoards();
+        loadTrelloCards();
+        
+        // Update dot status
+        document.getElementById('trello-dot').classList.add('connected');
+      })
+      .catch(error => {
+        console.error('Error validating token:', error);
+        statusDiv.innerHTML = '❌ Invalid Trello token';
+        statusDiv.style.background = 'rgba(255,71,87,0.1)';
+        showToast('Invalid Trello token', 'error');
+      });
+  }
+  
+  function loadTrelloBoards() {
+    if (!trelloToken) { 
+      document.getElementById('trello-board').innerHTML = '<option value="">Enter token first</option>'; 
+      document.getElementById('trello-board-status').innerText = 'No token';
+      return; 
+    }
+    
+    document.getElementById('trello-board').innerHTML = '<option value="">Loading boards...</option>';
+    document.getElementById('trello-board-status').innerText = 'Fetching boards...';
+    
+    fetch(`https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${trelloToken}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch boards');
+        return response.json();
+      })
+      .then(boards => {
+        trelloBoards = boards.map(board => ({
+          id: board.id,
+          name: board.name,
+          lists: []
+        }));
+        
+        let opts = '<option value="">Select board</option>';
+        trelloBoards.forEach(b => {
+          opts += `<option value="${b.id}">${b.name}</option>`;
+        });
+        
+        document.getElementById('trello-board').innerHTML = opts;
+        document.getElementById('trello-board-status').innerText = `${boards.length} boards loaded`;
+        
+        // Update DeepSeek board dropdowns
+        if(document.getElementById('deepseek-board')) {
+          document.getElementById('deepseek-board').innerHTML = opts;
+        }
+        if(document.getElementById('deepseek-dest-board')) {
+          document.getElementById('deepseek-dest-board').innerHTML = opts;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading boards:', error);
+        document.getElementById('trello-board').innerHTML = '<option value="">Error loading boards</option>';
+        document.getElementById('trello-board-status').innerText = 'Error loading boards';
+        showToast('Failed to load Trello boards', 'error');
+      });
+  }
+  
+  function loadTrelloLists() {
+    let boardId = document.getElementById('trello-board').value;
+    let listSel = document.getElementById('trello-list');
+    
+    if(!boardId) { 
+      listSel.innerHTML = '<option value="">Select board first</option>'; 
+      return; 
+    }
+    
+    listSel.innerHTML = '<option value="">Loading lists...</option>';
+    
+    fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${TRELLO_API_KEY}&token=${trelloToken}`)
+      .then(response => response.json())
+      .then(lists => {
+        let options = '<option value="">Select list</option>';
+        lists.forEach(list => {
+          options += `<option value="${list.id}">${list.name}</option>`;
+        });
+        listSel.innerHTML = options;
+        
+        // Also update DeepSeek list dropdown if needed
+        if(document.getElementById('deepseek-list')) {
+          document.getElementById('deepseek-list').innerHTML = options;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading lists:', error);
+        listSel.innerHTML = '<option value="">Error loading lists</option>';
+      });
+  }
+  
+  function loadTrelloCards(silent = false) {
+    if (!trelloToken) return Promise.resolve();
+    
+    if (!silent) showToast('Loading Trello cards...', 'info');
+    
+    return fetch(`https://api.trello.com/1/members/me/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`)
+      .then(response => response.json())
+      .then(cards => {
+        // Remove old Trello tasks (keep other sources)
+        tasks = tasks.filter(t => t.source !== 'trello');
+        
+        // Add real Trello cards
+        cards.forEach(card => {
+          // Determine priority from labels
+          let priority = 'medium';
+          if (card.labels) {
+            if (card.labels.some(l => l.name.toLowerCase().includes('high') || l.color === 'red')) priority = 'high';
+            else if (card.labels.some(l => l.name.toLowerCase().includes('low') || l.color === 'green')) priority = 'low';
+          }
+          
+          tasks.push({
+            id: card.id,
+            title: card.name,
+            description: card.desc || '',
+            source: 'trello',
+            priority: priority,
+            status: card.dueComplete ? 'done' : (card.closed ? 'done' : 'in_progress'),
+            dueDate: card.due ? card.due.split('T')[0] : null,
+            assignee: card.members?.map(m => '@' + (m.username || m.fullName)).join(', ') || '@unassigned',
+            labels: card.labels?.map(l => l.name) || []
+          });
+        });
+        
+        updateCounts();
+        updateStats();
+        renderView();
+        
+        if (!silent) showToast(`Loaded ${cards.length} Trello cards`, 'success');
+        return cards;
+      })
+      .catch(error => {
+        console.error('Error loading cards:', error);
+        if (!silent) showToast('Failed to load Trello cards', 'error');
+        throw error;
+      });
+  }
+  
+  function createTrelloCard() {
+    let listId = document.getElementById('trello-list').value;
+    let title = document.getElementById('trello-title').value.trim();
+    let desc = document.getElementById('trello-desc').value.trim();
+    let due = document.getElementById('trello-due').value;
+    let priorityLabel = document.getElementById('trello-priority-label').value.trim();
+    
+    if (!listId) {
+      showToast('Please select a list', 'error');
+      return;
+    }
+    
+    if (!title) {
+      showToast('Please enter a title', 'error');
+      return;
+    }
+    
+    showToast('Creating card...', 'info');
+    
+    // Build the card data
+    let cardData = {
+      idList: listId,
+      name: title,
+      desc: desc
+    };
+    
+    if (due) {
+      cardData.due = due;
+    }
+    
+    // Create the card
+    fetch(`https://api.trello.com/1/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(cardData)
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to create card');
+      return response.json();
+    })
+    .then(card => {
+      // If priority label was provided, add it
+      if (priorityLabel) {
+        // First, get board labels
+        return fetch(`https://api.trello.com/1/boards/${card.idBoard}/labels?key=${TRELLO_API_KEY}&token=${trelloToken}`)
+          .then(r => r.json())
+          .then(labels => {
+            // Find matching label
+            let matchingLabel = labels.find(l => 
+              l.name.toLowerCase() === priorityLabel.toLowerCase() ||
+              l.color === priorityLabel.toLowerCase()
+            );
+            
+            if (matchingLabel) {
+              // Add label to card
+              return fetch(`https://api.trello.com/1/cards/${card.id}/idLabels?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  value: matchingLabel.id
+                })
+              });
+            }
+          })
+          .then(() => card);
+      }
+      return card;
+    })
+    .then(card => {
+      // Add to local tasks
+      tasks.push({
+        id: card.id,
+        title: card.name,
+        description: card.desc || '',
+        source: 'trello',
+        priority: priorityLabel ? (priorityLabel.toLowerCase().includes('high') ? 'high' : 
+                priorityLabel.toLowerCase().includes('low') ? 'low' : 'medium') : 'medium',
         status: 'todo',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        assignee: '@system',
-        labels: ['synced']
-      };
-      tasks.push(newTask);
+        dueDate: card.due ? card.due.split('T')[0] : null,
+        assignee: '@trello',
+        labels: priorityLabel ? [priorityLabel] : []
+      });
+      
       updateCounts();
       updateStats();
       renderView();
-    }, 2000);
+      showToast('Card created successfully!', 'success');
+      closeCreateModal();
+    })
+    .catch(error => {
+      console.error('Error creating card:', error);
+      showToast('Failed to create card: ' + error.message, 'error');
+    });
   }
   
-  // Open configuration modal
-  function openConfig() {
-    document.getElementById('config-modal').style.display = 'flex';
-  }
-  
-  // Close configuration modal
-  function closeConfig() {
-    document.getElementById('config-modal').style.display = 'none';
-  }
-  
-  // Switch config tab
-  function switchConfigTab(tab, element) {
-    document.querySelectorAll('#config-modal .tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('#config-modal .config-section').forEach(s => s.style.display = 'none');
-    
-    element.classList.add('active');
-    document.getElementById(`config-${tab}`).style.display = 'block';
-  }
-  
-  // Save Trello token
-  function saveTrelloToken() {
-    const token = document.getElementById('trello-token-input').value;
-    if (token) {
-      trelloToken = token;
-      localStorage.setItem('trelloToken', token);
-      showToast('Trello token saved!', 'success');
+  function refreshTrelloBoards(e) { 
+    e.stopPropagation(); 
+    if (trelloToken) {
       loadTrelloBoards();
+      showToast('Boards refreshed', 'success');
     } else {
-      showToast('Please enter a valid token', 'error');
+      showToast('Please enter your Trello token first', 'error');
     }
   }
   
-  // Load Trello boards
-  function loadTrelloBoards() {
-    const boardSelect = document.getElementById('trello-board');
-    const deepseekBoard = document.getElementById('deepseek-board');
-    const deepseekDestBoard = document.getElementById('deepseek-dest-board');
+  function loadDeepSeekCards() {
+    let trelloTasks = tasks.filter(t=>t.source==='trello');
+    let opts = '<option value="">Select card</option>'; 
+    trelloTasks.forEach(t=>opts+=`<option value="${t.id}">${t.title}</option>`);
+    if(document.getElementById('deepseek-card-select')) document.getElementById('deepseek-card-select').innerHTML = opts;
+    if(document.getElementById('deepseek-delete-select')) document.getElementById('deepseek-delete-select').innerHTML = opts;
+    if(document.getElementById('deepseek-move-select')) document.getElementById('deepseek-move-select').innerHTML = opts;
+  }
+  
+  function loadDestinationLists() {
+    let boardId = document.getElementById('deepseek-dest-board').value;
+    let listSel = document.getElementById('deepseek-dest-list');
+    if(!boardId) { listSel.innerHTML = '<option value="">Select board first</option>'; return; }
     
     if (!trelloToken) {
-      if (boardSelect) boardSelect.innerHTML = '<option value="">Enter token first</option>';
-      if (deepseekBoard) deepseekBoard.innerHTML = '<option value="">Enter token first</option>';
-      if (deepseekDestBoard) deepseekDestBoard.innerHTML = '<option value="">Enter token first</option>';
+      listSel.innerHTML = '<option value="">No token</option>';
       return;
     }
     
-    // Demo boards
-    trelloBoards = [
-      { id: 'board1', name: 'Development Board', lists: [
-        { id: 'list1', name: 'To Do' },
-        { id: 'list2', name: 'In Progress' },
-        { id: 'list3', name: 'Done' }
-      ]},
-      { id: 'board2', name: 'Marketing Board', lists: [
-        { id: 'list4', name: 'Backlog' },
-        { id: 'list5', name: 'Active' },
-        { id: 'list6', name: 'Completed' }
-      ]},
-      { id: 'board3', name: 'Product Board', lists: [
-        { id: 'list7', name: 'Ideas' },
-        { id: 'list8', name: 'In Review' },
-        { id: 'list9', name: 'Shipped' }
-      ]}
-    ];
+    listSel.innerHTML = '<option value="">Loading lists...</option>';
     
-    let options = '<option value="">Select a board</option>';
-    trelloBoards.forEach(board => {
-      options += `<option value="${board.id}">${board.name}</option>`;
-    });
-    
-    if (boardSelect) boardSelect.innerHTML = options;
-    if (deepseekBoard) deepseekBoard.innerHTML = options;
-    if (deepseekDestBoard) deepseekDestBoard.innerHTML = options;
-    
-    if (document.getElementById('trello-board-status')) {
-      document.getElementById('trello-board-status').innerText = 'Boards loaded successfully!';
-    }
+    fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${TRELLO_API_KEY}&token=${trelloToken}`)
+      .then(response => response.json())
+      .then(lists => {
+        let options = '<option value="">Select list</option>';
+        lists.forEach(list => {
+          options += `<option value="${list.id}">${list.name}</option>`;
+        });
+        listSel.innerHTML = options;
+      })
+      .catch(error => {
+        console.error('Error loading lists:', error);
+        listSel.innerHTML = '<option value="">Error loading lists</option>';
+      });
   }
   
-  // Load Trello lists for selected board
-  function loadTrelloLists() {
-    const boardId = document.getElementById('trello-board').value;
-    const listSelect = document.getElementById('trello-list');
-    
-    if (!boardId) {
-      listSelect.innerHTML = '<option value="">Select a board first</option>';
-      return;
-    }
-    
-    const board = trelloBoards.find(b => b.id === boardId);
-    if (board) {
-      let options = '<option value="">Select a list</option>';
-      board.lists.forEach(list => {
-        options += `<option value="${list.id}">${list.name}</option>`;
-      });
-      listSelect.innerHTML = options;
-    }
-  }
-  
-  // Refresh Trello boards
-  function refreshTrelloBoards(event) {
-    event.stopPropagation();
-    loadTrelloBoards();
-    showToast('Trello boards refreshed!', 'success');
-  }
-  
-  // Load DeepSeek cards for selection
-  function loadDeepSeekCards() {
-    const cardSelect = document.getElementById('deepseek-card-select');
-    const deleteSelect = document.getElementById('deepseek-delete-select');
-    const moveSelect = document.getElementById('deepseek-move-select');
-    
-    const trelloCards = tasks.filter(t => t.source === 'trello');
-    
-    if (cardSelect) {
-      let options = '<option value="">Select a card</option>';
-      trelloCards.forEach(card => {
-        options += `<option value="${card.id}">${card.title} (${card.status})</option>`;
-      });
-      cardSelect.innerHTML = options;
-    }
-    
-    if (deleteSelect) {
-      let options = '<option value="">Select a card to delete</option>';
-      trelloCards.forEach(card => {
-        options += `<option value="${card.id}">${card.title}</option>`;
-      });
-      deleteSelect.innerHTML = options;
-    }
-    
-    if (moveSelect) {
-      let options = '<option value="">Select a card to move</option>';
-      trelloCards.forEach(card => {
-        options += `<option value="${card.id}">${card.title}</option>`;
-      });
-      moveSelect.innerHTML = options;
-    }
-  }
-  
-  // Load destination lists for move operation
-  function loadDestinationLists() {
-    const boardId = document.getElementById('deepseek-dest-board').value;
-    const listSelect = document.getElementById('deepseek-dest-list');
-    
-    if (!boardId) {
-      listSelect.innerHTML = '<option value="">Select a board first</option>';
-      return;
-    }
-    
-    const board = trelloBoards.find(b => b.id === boardId);
-    if (board) {
-      let options = '<option value="">Select a list</option>';
-      board.lists.forEach(list => {
-        options += `<option value="${list.id}">${list.name}</option>`;
-      });
-      listSelect.innerHTML = options;
-    }
-  }
-  
-  // Save DeepSeek configuration
   function saveDeepSeekConfig() {
     deepseekConfig.apiKey = document.getElementById('deepseek-api-key').value;
     deepseekConfig.endpoint = document.getElementById('deepseek-endpoint').value;
     deepseekConfig.model = document.getElementById('deepseek-model').value;
-    
     localStorage.setItem('deepseekApiKey', deepseekConfig.apiKey);
     localStorage.setItem('deepseekEndpoint', deepseekConfig.endpoint);
     localStorage.setItem('deepseekModel', deepseekConfig.model);
-    
-    showToast('DeepSeek configuration saved!', 'success');
+    showToast('DeepSeek config saved','success');
   }
   
-  // Test DeepSeek connection
   function testDeepSeekConnection() {
-    const resultDiv = document.getElementById('deepseek-test-result');
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = 'Testing connection...';
-    resultDiv.style.background = 'var(--surface2)';
-    
-    // Simulate API test
-    setTimeout(() => {
-      if (document.getElementById('deepseek-api-key').value) {
-        resultDiv.innerHTML = '✅ Connection successful! DeepSeek API is working.';
-        resultDiv.style.background = 'rgba(0,212,170,0.1)';
-        resultDiv.style.color = 'var(--accent2)';
-      } else {
-        resultDiv.innerHTML = '❌ Please enter an API key first.';
-        resultDiv.style.background = 'rgba(255,71,87,0.1)';
-        resultDiv.style.color = 'var(--danger)';
-      }
-    }, 1000);
+    let res = document.getElementById('deepseek-test-result'); res.style.display='block';
+    if(document.getElementById('deepseek-api-key').value) { 
+      res.innerHTML='✅ Connection simulated! (demo)'; 
+      res.style.background='rgba(0,212,170,0.1)'; 
+    } else { 
+      res.innerHTML='❌ No API key'; 
+      res.style.background='rgba(255,71,87,0.1)'; 
+    }
   }
   
-  // Show create modal
-  function showCreateModal(source, event) {
-    if (event) event.stopPropagation();
-    
+  function showCreateModal(source, e) { 
+    if(e) e.stopPropagation();
     document.getElementById('create-modal').style.display = 'flex';
-    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase() + source.slice(1)} Item`;
+    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase()+source.slice(1)}`;
+    document.querySelectorAll('.source-form').forEach(f=>f.style.display='none');
+    document.getElementById(source+'-form').style.display = 'block';
+    document.querySelectorAll('#source-tabs .tab').forEach(t=>t.classList.remove('active'));
+    document.querySelector(`#source-tabs .tab[onclick="switchSourceTab('${source}')"]`).classList.add('active');
     
-    // Hide all forms
-    document.querySelectorAll('.source-form').forEach(form => {
-      form.style.display = 'none';
-    });
-    
-    // Show selected form
-    document.getElementById(`${source}-form`).style.display = 'block';
-    
-    // Update tabs
-    document.querySelectorAll('#source-tabs .tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    const activeTab = Array.from(document.querySelectorAll('#source-tabs .tab')).find(tab => tab.innerText.toLowerCase() === source);
-    if (activeTab) activeTab.classList.add('active');
-    
-    // Hide default create buttons for DeepSeek
-    if (source === 'deepseek') {
-      document.getElementById('create-action-buttons').style.display = 'none';
-    } else {
-      document.getElementById('create-action-buttons').style.display = 'flex';
+    if(source==='deepseek') { 
+      document.getElementById('create-action-buttons').style.display='none'; 
+      loadDeepSeekCards(); 
+      loadTrelloBoards(); 
+      updateDeepSeekForm(); 
+    } else { 
+      document.getElementById('create-action-buttons').style.display='flex'; 
     }
     
-    // Load Trello boards if needed
-    if (source === 'trello') {
-      loadTrelloBoards();
-    }
-    
-    // Load DeepSeek cards
-    if (source === 'deepseek') {
-      loadDeepSeekCards();
-      loadTrelloBoards();
-      updateDeepSeekForm();
-    }
+    if(source==='trello') loadTrelloBoards();
   }
   
-  // Close create modal
-  function closeCreateModal() {
-    document.getElementById('create-modal').style.display = 'none';
-  }
+  function closeCreateModal() { document.getElementById('create-modal').style.display='none'; }
   
-  // Switch source tab in create modal
-  function switchSourceTab(source, element) {
-    document.querySelectorAll('#source-tabs .tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    element.classList.add('active');
+  function switchSourceTab(source) {
+    document.querySelectorAll('#source-tabs .tab').forEach(t=>t.classList.remove('active')); 
+    event.target.classList.add('active');
+    document.querySelectorAll('.source-form').forEach(f=>f.style.display='none'); 
+    document.getElementById(source+'-form').style.display='block';
+    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase()+source.slice(1)}`;
     
-    document.querySelectorAll('.source-form').forEach(form => {
-      form.style.display = 'none';
-    });
-    
-    document.getElementById(`${source}-form`).style.display = 'block';
-    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase() + source.slice(1)} Item`;
-    
-    // Hide default create buttons for DeepSeek
-    if (source === 'deepseek') {
-      document.getElementById('create-action-buttons').style.display = 'none';
-      loadDeepSeekCards();
-      loadTrelloBoards();
-      updateDeepSeekForm();
-    } else {
-      document.getElementById('create-action-buttons').style.display = 'flex';
+    if(source==='deepseek') { 
+      document.getElementById('create-action-buttons').style.display='none'; 
+      loadDeepSeekCards(); 
+      loadTrelloBoards(); 
+      updateDeepSeekForm(); 
+    } else { 
+      document.getElementById('create-action-buttons').style.display='flex'; 
     }
+    
+    if(source==='trello') loadTrelloBoards();
   }
   
-  // Update DeepSeek form based on command type
   function updateDeepSeekForm() {
-    const commandType = document.getElementById('deepseek-command-type').value;
-    
-    document.getElementById('deepseek-create-fields').style.display = commandType === 'create' ? 'block' : 'none';
-    document.getElementById('deepseek-update-fields').style.display = commandType === 'update' ? 'block' : 'none';
-    document.getElementById('deepseek-delete-fields').style.display = commandType === 'delete' ? 'block' : 'none';
-    document.getElementById('deepseek-move-fields').style.display = commandType === 'move' ? 'block' : 'none';
-    document.getElementById('deepseek-analyze-fields').style.display = commandType === 'analyze' ? 'block' : 'none';
-    
-    // Load cards for update/delete/move
-    if (commandType === 'update' || commandType === 'delete' || commandType === 'move') {
-      loadDeepSeekCards();
-    }
-    
-    // Load boards for create/move
-    if (commandType === 'create' || commandType === 'move') {
-      loadTrelloBoards();
-    }
+    let type = document.getElementById('deepseek-command-type').value;
+    document.getElementById('deepseek-create-fields').style.display = type==='create'?'block':'none';
+    document.getElementById('deepseek-update-fields').style.display = type==='update'?'block':'none';
+    document.getElementById('deepseek-delete-fields').style.display = type==='delete'?'block':'none';
+    document.getElementById('deepseek-move-fields').style.display = type==='move'?'block':'none';
+    document.getElementById('deepseek-analyze-fields').style.display = type==='analyze'?'block':'none';
+    if(['update','delete','move'].includes(type)) loadDeepSeekCards();
+    if(['create','move'].includes(type)) loadTrelloBoards();
   }
   
-  // Execute DeepSeek command
   function executeDeepSeekCommand() {
-    const commandType = document.getElementById('deepseek-command-type').value;
-    
-    switch(commandType) {
-      case 'create':
-        executeDeepSeekCreate();
-        break;
-      case 'update':
-        executeDeepSeekUpdate();
-        break;
-      case 'delete':
-        executeDeepSeekDelete();
-        break;
-      case 'move':
-        executeDeepSeekMove();
-        break;
-      case 'analyze':
-        executeDeepSeekAnalyze();
-        break;
-    }
-  }
-  
-  // Execute DeepSeek create command
-  function executeDeepSeekCreate() {
-    const title = document.getElementById('deepseek-title').value;
-    const desc = document.getElementById('deepseek-desc').value;
-    const due = document.getElementById('deepseek-due').value;
-    const priority = document.getElementById('deepseek-priority').value;
-    
-    if (!title) {
-      showToast('Please enter a card title', 'error');
-      return;
-    }
-    
-    const newTask = {
-      id: Date.now().toString(),
-      title: title,
-      description: desc || 'Created by DeepSeek AI',
-      source: 'trello',
-      priority: priority,
-      status: 'todo',
-      dueDate: due || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignee: '@deepseek',
-      labels: ['ai-created']
-    };
-    
-    tasks.push(newTask);
-    updateCounts();
-    updateStats();
-    renderView();
-    
-    showToast(`✅ Card "${title}" created successfully!`, 'success');
-    addAIMessage(`✅ Created card: "${title}"`);
-    closeCreateModal();
-  }
-  
-  // Execute DeepSeek update command
-  function executeDeepSeekUpdate() {
-    const cardId = document.getElementById('deepseek-card-select').value;
-    const newTitle = document.getElementById('deepseek-new-title').value;
-    const newDesc = document.getElementById('deepseek-new-desc').value;
-    const newDue = document.getElementById('deepseek-new-due').value;
-    const newPriority = document.getElementById('deepseek-new-priority').value;
-    
-    if (!cardId) {
-      showToast('Please select a card to update', 'error');
-      return;
-    }
-    
-    const task = tasks.find(t => t.id === cardId);
-    if (task) {
-      if (newTitle) task.title = newTitle;
-      if (newDesc) task.description = newDesc;
-      if (newDue) task.dueDate = newDue;
-      if (newPriority) task.priority = newPriority;
+    let type = document.getElementById('deepseek-command-type').value;
+    if(type==='create') { 
+      let title = document.getElementById('deepseek-title').value; 
+      if(!title) { showToast('Enter title','error'); return; }
       
-      updateCounts();
-      updateStats();
-      renderView();
-      
-      showToast(`✅ Card "${task.title}" updated successfully!`, 'success');
-      addAIMessage(`✅ Updated card: "${task.title}"`);
-      closeCreateModal();
-    }
-  }
-  
-  // Execute DeepSeek delete command
-  function executeDeepSeekDelete() {
-    const cardId = document.getElementById('deepseek-delete-select').value;
-    
-    if (!cardId) {
-      showToast('Please select a card to delete', 'error');
-      return;
-    }
-    
-    const taskIndex = tasks.findIndex(t => t.id === cardId);
-    if (taskIndex !== -1) {
-      const taskTitle = tasks[taskIndex].title;
-      tasks.splice(taskIndex, 1);
-      
-      updateCounts();
-      updateStats();
-      renderView();
-      
-      showToast(`✅ Card "${taskTitle}" deleted successfully!`, 'success');
-      addAIMessage(`✅ Deleted card: "${taskTitle}"`);
-      closeCreateModal();
-    }
-  }
-  
-  // Execute DeepSeek move command
-  function executeDeepSeekMove() {
-    const cardId = document.getElementById('deepseek-move-select').value;
-    
-    if (!cardId) {
-      showToast('Please select a card to move', 'error');
-      return;
-    }
-    
-    const task = tasks.find(t => t.id === cardId);
-    if (task) {
-      showToast(`✅ Card "${task.title}" moved successfully!`, 'success');
-      addAIMessage(`✅ Moved card: "${task.title}" to new board`);
-      closeCreateModal();
-    }
-  }
-  
-  // Execute DeepSeek analyze command
-  function executeDeepSeekAnalyze() {
-    const analysisType = document.getElementById('deepseek-analysis-type').value;
-    let analysis = '';
-    
-    switch(analysisType) {
-      case 'overdue':
-        const today = new Date().toISOString().split('T')[0];
-        const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done');
-        analysis = `📊 **Overdue Tasks Analysis**\n\nTotal overdue: ${overdue.length}\n\n`;
-        overdue.forEach(t => {
-          analysis += `• ${t.title} (Due: ${t.dueDate}) - ${t.assignee}\n`;
-        });
-        break;
-        
-      case 'high-priority':
-        const high = tasks.filter(t => t.priority === 'high');
-        analysis = `📊 **High Priority Tasks**\n\nTotal high priority: ${high.length}\n\n`;
-        high.forEach(t => {
-          analysis += `• ${t.title} - ${t.source} (${t.status})\n`;
-        });
-        break;
-        
-      case 'board-distribution':
-        const sources = {};
-        tasks.forEach(t => {
-          sources[t.source] = (sources[t.source] || 0) + 1;
-        });
-        analysis = `📊 **Board Distribution**\n\n`;
-        for (let [source, count] of Object.entries(sources)) {
-          analysis += `• ${source.toUpperCase()}: ${count} tasks\n`;
-        }
-        break;
-        
-      default:
-        analysis = `📊 **All Tasks Summary**\n\nTotal: ${tasks.length}\n`;
-        analysis += `To Do: ${tasks.filter(t => t.status === 'todo').length}\n`;
-        analysis += `In Progress: ${tasks.filter(t => t.status === 'in_progress').length}\n`;
-        analysis += `Done: ${tasks.filter(t => t.status === 'done').length}\n`;
-        analysis += `High Priority: ${tasks.filter(t => t.priority === 'high').length}`;
-    }
-    
-    addAIMessage(analysis);
-    closeCreateModal();
-  }
-  
-  // Create item from regular forms
-  function createItem() {
-    const activeTab = document.querySelector('#source-tabs .tab.active').innerText.toLowerCase();
-    
-    switch(activeTab) {
-      case 'trello':
-        createTrelloItem();
-        break;
-      case 'jira':
-        createJiraItem();
-        break;
-      case 'slack':
-        createSlackItem();
-        break;
-      case 'gmail':
-        createGmailItem();
-        break;
-    }
-  }
-  
-  // Create Trello item
-  function createTrelloItem() {
-    const title = document.getElementById('trello-title').value;
-    const desc = document.getElementById('trello-desc').value;
-    const due = document.getElementById('trello-due').value;
-    const priority = document.getElementById('trello-priority').value;
-    const labels = document.getElementById('trello-labels').value;
-    
-    if (!title) {
-      showToast('Please enter a card title', 'error');
-      return;
-    }
-    
-    const newTask = {
-      id: Date.now().toString(),
-      title: title,
-      description: desc || 'Created via Trello form',
-      source: 'trello',
-      priority: priority,
-      status: 'todo',
-      dueDate: due || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignee: '@user',
-      labels: labels ? labels.split(',').map(l => l.trim()) : []
-    };
-    
-    tasks.push(newTask);
-    updateCounts();
-    updateStats();
-    renderView();
-    
-    showToast(`✅ Trello card "${title}" created!`, 'success');
-    closeCreateModal();
-  }
-  
-  // Create Jira item
-  function createJiraItem() {
-    const project = document.getElementById('jira-project').value;
-    const type = document.getElementById('jira-type').value;
-    const summary = document.getElementById('jira-summary').value;
-    const description = document.getElementById('jira-description').value;
-    const priority = document.getElementById('jira-priority').value;
-    const assignee = document.getElementById('jira-assignee').value;
-    
-    if (!summary) {
-      showToast('Please enter a summary', 'error');
-      return;
-    }
-    
-    const newTask = {
-      id: Date.now().toString(),
-      title: `[${project || 'PROJ'}] ${summary}`,
-      description: description || 'Created via Jira form',
-      source: 'jira',
-      priority: priority.toLowerCase(),
-      status: 'todo',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignee: assignee ? `@${assignee}` : '@unassigned',
-      labels: [type.toLowerCase()]
-    };
-    
-    tasks.push(newTask);
-    updateCounts();
-    updateStats();
-    renderView();
-    
-    showToast(`✅ Jira issue "${summary}" created!`, 'success');
-    closeCreateModal();
-  }
-  
-  // Create Slack message
-  function createSlackItem() {
-    const channel = document.getElementById('slack-channel').value;
-    const message = document.getElementById('slack-message').value;
-    
-    if (!message) {
-      showToast('Please enter a message', 'error');
-      return;
-    }
-    
-    const newTask = {
-      id: Date.now().toString(),
-      title: `Slack: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
-      description: message,
-      source: 'slack',
-      priority: 'medium',
-      status: 'done',
-      dueDate: new Date().toISOString().split('T')[0],
-      assignee: '@user',
-      labels: ['slack']
-    };
-    
-    tasks.push(newTask);
-    updateCounts();
-    updateStats();
-    renderView();
-    
-    showToast(`✅ Slack message sent to ${channel || 'channel'}!`, 'success');
-    closeCreateModal();
-  }
-  
-  // Create Gmail draft
-  function createGmailItem() {
-    const to = document.getElementById('gmail-to').value;
-    const subject = document.getElementById('gmail-subject').value;
-    const body = document.getElementById('gmail-body').value;
-    const important = document.getElementById('gmail-important').checked;
-    
-    if (!to || !subject) {
-      showToast('Please enter recipient and subject', 'error');
-      return;
-    }
-    
-    const newTask = {
-      id: Date.now().toString(),
-      title: `Email: ${subject}`,
-      description: `To: ${to}\n\n${body}`,
-      source: 'gmail',
-      priority: important ? 'high' : 'medium',
-      status: 'todo',
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignee: '@user',
-      labels: ['email', important ? 'important' : '']
-    };
-    
-    tasks.push(newTask);
-    updateCounts();
-    updateStats();
-    renderView();
-    
-    showToast(`✅ Email draft created for ${to}!`, 'success');
-    closeCreateModal();
-  }
-  
-  // Open task details
-  function openTaskDetails(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      addAIMessage(`📋 **Task Details**\n\n**${task.title}**\n${task.description}\n\nPriority: ${task.priority}\nStatus: ${task.status}\nDue: ${task.dueDate || 'None'}\nAssignee: ${task.assignee}`);
-    }
-  }
-  
-  // Edit task
-  function editTask(taskId, event) {
-    event.stopPropagation();
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      showToast(`Editing: ${task.title}`, 'info');
-    }
-  }
-  
-  // Delete task
-  function deleteTask(taskId, event) {
-    event.stopPropagation();
-    if (confirm('Are you sure you want to delete this task?')) {
-      const taskIndex = tasks.findIndex(t => t.id === taskId);
-      if (taskIndex !== -1) {
-        const taskTitle = tasks[taskIndex].title;
-        tasks.splice(taskIndex, 1);
-        updateCounts();
-        updateStats();
-        renderView();
-        showToast(`✅ Task "${taskTitle}" deleted`, 'success');
+      if (!trelloToken) {
+        showToast('Please configure Trello token first', 'error');
+        return;
       }
+      
+      let listId = document.getElementById('deepseek-list').value;
+      if (!listId) {
+        showToast('Please select a list', 'error');
+        return;
+      }
+      
+      showToast('Creating card via DeepSeek...', 'info');
+      
+      fetch(`https://api.trello.com/1/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idList: listId,
+          name: title,
+          desc: document.getElementById('deepseek-desc').value || '',
+          due: document.getElementById('deepseek-due').value || null
+        })
+      })
+      .then(response => response.json())
+      .then(card => {
+        tasks.push({ 
+          id: card.id, 
+          title, 
+          description: document.getElementById('deepseek-desc').value||'', 
+          source:'trello', 
+          priority:document.getElementById('deepseek-priority').value, 
+          status:'todo', 
+          dueDate:document.getElementById('deepseek-due').value||null, 
+          assignee:'@deepseek', 
+          labels:[] 
+        });
+        updateCounts(); 
+        updateStats(); 
+        renderView(); 
+        showToast('Card created','success'); 
+        addAIMessage(`✅ Created card: ${title}`); 
+        closeCreateModal();
+      })
+      .catch(error => {
+        showToast('Failed to create card: ' + error.message, 'error');
+      });
+    }
+    else if(type==='update') { 
+      let id = document.getElementById('deepseek-card-select').value; 
+      if(!id) return; 
+      let task = tasks.find(t=>t.id===id); 
+      if(task) { 
+        if(document.getElementById('deepseek-new-title').value) task.title = document.getElementById('deepseek-new-title').value; 
+        if(document.getElementById('deepseek-new-desc').value) task.description = document.getElementById('deepseek-new-desc').value; 
+        if(document.getElementById('deepseek-new-due').value) task.dueDate = document.getElementById('deepseek-new-due').value; 
+        if(document.getElementById('deepseek-new-priority').value) task.priority = document.getElementById('deepseek-new-priority').value; 
+        updateCounts(); 
+        updateStats(); 
+        renderView(); 
+        showToast('Card updated','success'); 
+        addAIMessage(`✅ Updated card`); 
+        closeCreateModal(); 
+      } 
+    }
+    else if(type==='delete') { 
+      let id = document.getElementById('deepseek-delete-select').value; 
+      if(!id) return; 
+      let idx = tasks.findIndex(t=>t.id===id); 
+      if(idx!==-1) { 
+        let title = tasks[idx].title; 
+        tasks.splice(idx,1); 
+        updateCounts(); 
+        updateStats(); 
+        renderView(); 
+        showToast('Card deleted','success'); 
+        addAIMessage(`✅ Deleted: ${title}`); 
+        closeCreateModal(); 
+      } 
+    }
+    else if(type==='move') { 
+      let id = document.getElementById('deepseek-move-select').value; 
+      if(!id) return; 
+      showToast('Move simulated (demo)','info'); 
+      addAIMessage(`🔄 Move command executed (demo)`); 
+      closeCreateModal(); 
+    }
+    else if(type==='analyze') { 
+      let analysis = ''; 
+      if(document.getElementById('deepseek-analysis-type').value==='overdue') {
+        let overdue = tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done');
+        analysis = `📊 Overdue tasks: ${overdue.length}\n` + overdue.map(t => `• ${t.title} (due ${t.dueDate})`).join('\n');
+      } else if (document.getElementById('deepseek-analysis-type').value === 'high-priority') {
+        let high = tasks.filter(t => t.priority === 'high');
+        analysis = `📊 High priority tasks: ${high.length}\n` + high.map(t => `• ${t.title}`).join('\n');
+      } else {
+        analysis = `📊 Total tasks: ${tasks.length}\n` +
+                  `In Progress: ${tasks.filter(t => t.status === 'in_progress').length}\n` +
+                  `Done: ${tasks.filter(t => t.status === 'done').length}\n` +
+                  `Overdue: ${tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done').length}`;
+      }
+      addAIMessage(analysis); 
+      closeCreateModal(); 
     }
   }
   
-  // Send message to AI
-  function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-    
-    if (message) {
-      addUserMessage(message);
-      processAIMessage(message);
-      input.value = '';
+  function createItem() { 
+    let active = document.querySelector('#source-tabs .tab.active').innerText.toLowerCase();
+    if(active==='trello') { 
+      createTrelloCard();
+    }
+    else if(active==='jira') { 
+      let s = document.getElementById('jira-summary').value; 
+      if(!s) return; 
+      tasks.push({ 
+        id: Date.now().toString(), 
+        title: `[${document.getElementById('jira-project').value||'PROJ'}] ${s}`, 
+        description: document.getElementById('jira-description').value||'', 
+        source:'jira', 
+        priority: (document.getElementById('jira-priority').value||'medium').toLowerCase(), 
+        status:'todo', 
+        dueDate: new Date(Date.now()+7*24*60*60*1000).toISOString().split('T')[0], 
+        assignee: document.getElementById('jira-assignee').value?'@'+document.getElementById('jira-assignee').value:'@unassigned', 
+        labels:[] 
+      }); 
+      updateCounts(); 
+      updateStats(); 
+      renderView(); 
+      showToast('Jira issue created','success'); 
+      closeCreateModal(); 
+    }
+    else if(active==='slack') { 
+      let msg = document.getElementById('slack-message').value; 
+      if(!msg) return; 
+      tasks.push({ 
+        id: Date.now().toString(), 
+        title: 'Slack: '+msg.substring(0,30), 
+        description: msg, 
+        source:'slack', 
+        priority:'medium', 
+        status:'done', 
+        dueDate: new Date().toISOString().split('T')[0], 
+        assignee:'@user', 
+        labels:[] 
+      }); 
+      updateCounts(); 
+      updateStats(); 
+      renderView(); 
+      showToast('Slack message logged','success'); 
+      closeCreateModal(); 
+    }
+    else if(active==='gmail') { 
+      let subj = document.getElementById('gmail-subject').value; 
+      if(!subj) return; 
+      tasks.push({ 
+        id: Date.now().toString(), 
+        title: 'Email: '+subj, 
+        description: 'To: '+document.getElementById('gmail-to').value+'\n'+document.getElementById('gmail-body').value, 
+        source:'gmail', 
+        priority: document.getElementById('gmail-important').checked?'high':'medium', 
+        status:'todo', 
+        dueDate: new Date(Date.now()+3*24*60*60*1000).toISOString().split('T')[0], 
+        assignee:'@user', 
+        labels:[] 
+      }); 
+      updateCounts(); 
+      updateStats(); 
+      renderView(); 
+      showToast('Email draft created','success'); 
+      closeCreateModal(); 
     }
   }
   
-  // Send quick prompt
-  function sendQuickPrompt(prompt) {
-    addUserMessage(prompt);
-    processAIMessage(prompt);
+  function openTaskDetails(id) { 
+    let t = tasks.find(t=>t.id===id); 
+    if(t) addAIMessage(`📋 **${t.title}**\n${t.description}\nPriority: ${t.priority}\nStatus: ${t.status}\nDue: ${t.dueDate}`); 
   }
   
-  // Add user message to chat
-  function addUserMessage(message) {
-    const chatArea = document.getElementById('chat-area');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'msg user';
-    msgDiv.innerHTML = `<div class="msg-bubble">${message}</div>`;
-    chatArea.appendChild(msgDiv);
-    chatArea.scrollTop = chatArea.scrollHeight;
+  function editTask(id, e) { e.stopPropagation(); showToast('Edit feature - demo','info'); }
+  
+  function deleteTask(id, e) { 
+    e.stopPropagation(); 
+    if(confirm('Delete?')) { 
+      let idx = tasks.findIndex(t=>t.id===id); 
+      if(idx!==-1) { 
+        let title = tasks[idx].title; 
+        tasks.splice(idx,1); 
+        updateCounts(); 
+        updateStats(); 
+        renderView(); 
+        showToast(`Deleted ${title}`,'success'); 
+      } 
+    } 
   }
   
-  // Add AI message to chat
-  function addAIMessage(message) {
-    const chatArea = document.getElementById('chat-area');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'msg ai';
-    msgDiv.innerHTML = `<div class="msg-bubble">${message.replace(/\n/g, '<br>')}</div>`;
-    chatArea.appendChild(msgDiv);
-    chatArea.scrollTop = chatArea.scrollHeight;
+  function sendMessage() { 
+    let inp = document.getElementById('chat-input'); 
+    let msg = inp.value.trim(); 
+    if(msg) { 
+      addUserMessage(msg); 
+      processAIMessage(msg); 
+      inp.value=''; 
+    } 
   }
   
-  // Process AI message (simulated DeepSeek API)
-  function processAIMessage(message) {
-    // Simulate AI processing
+  function sendQuickPrompt(p) { 
+    addUserMessage(p); 
+    processAIMessage(p); 
+  }
+  
+  function addUserMessage(m) { 
+    let a = document.getElementById('chat-area'); 
+    let d = document.createElement('div'); 
+    d.className='msg user'; 
+    d.innerHTML=`<div class="msg-bubble">${m}</div>`; 
+    a.appendChild(d); 
+    a.scrollTop = a.scrollHeight; 
+  }
+  
+  function addAIMessage(m) { 
+    let a = document.getElementById('chat-area'); 
+    let d = document.createElement('div'); 
+    d.className='msg ai'; 
+    d.innerHTML=`<div class="msg-bubble">${m.replace(/\n/g,'<br>')}</div>`; 
+    a.appendChild(d); 
+    a.scrollTop = a.scrollHeight; 
+  }
+  
+  function processAIMessage(m) {
     setTimeout(() => {
       let response = '';
-      
-      if (message.toLowerCase().includes('create')) {
-        // Extract task details from message (simplified)
-        const titleMatch = message.match(/(?:called|titled?|name(?:d)?)\s+["']?([^"']+)["']?/i);
-        const title = titleMatch ? titleMatch[1] : 'New Task';
-        
-        const priorityMatch = message.match(/(high|medium|low)\s+priority/i);
-        const priority = priorityMatch ? priorityMatch[1] : 'medium';
-        
-        // Create the task
-        const newTask = {
-          id: Date.now().toString(),
-          title: title,
-          description: 'Created via DeepSeek AI',
-          source: 'trello',
-          priority: priority,
-          status: 'todo',
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          assignee: '@deepseek',
-          labels: ['ai-created']
-        };
-        
-        tasks.push(newTask);
-        updateCounts();
-        updateStats();
-        renderView();
-        
-        response = `✅ **Card Created**\n\nI've created a new ${priority} priority card: "${title}"\n\nYou can find it in your Trello board.`;
-        
-      } else if (message.toLowerCase().includes('update')) {
-        const titleMatch = message.match(/["']([^"']+)["']/);
-        if (titleMatch) {
-          const taskTitle = titleMatch[1];
-          const task = tasks.find(t => t.title.toLowerCase().includes(taskTitle.toLowerCase()));
-          
-          if (task) {
-            response = `✅ **Card Updated**\n\nI've updated the card "${task.title}" as requested.`;
-          } else {
-            response = `❌ **Card Not Found**\n\nI couldn't find a card matching "${taskTitle}".`;
-          }
-        } else {
-          response = "I need more details about which card to update. Please specify the card title.";
-        }
-        
-      } else if (message.toLowerCase().includes('delete')) {
-        const titleMatch = message.match(/["']([^"']+)["']/);
-        if (titleMatch) {
-          const taskTitle = titleMatch[1];
-          const taskIndex = tasks.findIndex(t => t.title.toLowerCase().includes(taskTitle.toLowerCase()));
-          
-          if (taskIndex !== -1) {
-            const task = tasks[taskIndex];
-            tasks.splice(taskIndex, 1);
-            updateCounts();
-            updateStats();
-            renderView();
-            response = `✅ **Card Deleted**\n\nI've deleted the card "${task.title}".`;
-          } else {
-            response = `❌ **Card Not Found**\n\nI couldn't find a card matching "${taskTitle}".`;
-          }
-        } else {
-          response = "Please specify which card to delete by title.";
-        }
-        
-      } else if (message.toLowerCase().includes('move')) {
-        response = "🔄 **Move Operation**\n\nTo move a card, please use the AI Actions panel for precise control.";
-        
-      } else if (message.toLowerCase().includes('show') || message.toLowerCase().includes('list')) {
-        const highPriority = tasks.filter(t => t.priority === 'high');
-        response = `📋 **Task Overview**\n\nTotal tasks: ${tasks.length}\nHigh priority: ${highPriority.length}\n\n**High Priority Tasks:**\n`;
-        highPriority.slice(0, 5).forEach(t => {
-          response += `• ${t.title} (${t.status})\n`;
-        });
-        
-      } else {
-        response = "I can help you manage your Trello boards! Try commands like:\n\n" +
-                  "• Create a high priority task called 'Fix login bug'\n" +
-                  "• Update the 'Design review' card\n" +
-                  "• Delete the 'Old task' card\n" +
-                  "• Show me all high priority cards";
+      if(m.toLowerCase().includes('create')) { 
+        let title = m.match(/called ['"]?([^'"]+)/i)?.[1] || 'New Task'; 
+        tasks.push({ 
+          id: Date.now().toString(), 
+          title, 
+          description:'AI created', 
+          source:'trello', 
+          priority: m.includes('high')?'high':'medium', 
+          status:'todo', 
+          dueDate: new Date(Date.now()+7*24*60*60*1000).toISOString().split('T')[0], 
+          assignee:'@deepseek', 
+          labels:[] 
+        }); 
+        updateCounts(); 
+        updateStats(); 
+        renderView(); 
+        response=`✅ Created card: ${title}`; 
       }
-      
+      else if(m.toLowerCase().includes('delete')) { 
+        let delMatch = m.match(/['"]?([^'"]+card[^'"]*)/i); 
+        if(delMatch) { 
+          let term = delMatch[1].toLowerCase(); 
+          let idx = tasks.findIndex(t => t.title.toLowerCase().includes(term) || t.description.toLowerCase().includes(term)); 
+          if(idx!==-1) { 
+            let ttl = tasks[idx].title; 
+            tasks.splice(idx,1); 
+            updateCounts(); 
+            updateStats(); 
+            renderView(); 
+            response=`✅ Deleted: ${ttl}`; 
+          } else response='❌ Card not found'; 
+        } else response='Specify card title'; 
+      }
+      else if(m.toLowerCase().includes('show')||m.toLowerCase().includes('high priority')) { 
+        let high = tasks.filter(t=>t.priority==='high'); 
+        response = `📋 High priority (${high.length}): `+high.map(t=>t.title).join(', '); 
+      }
+      else if(m.toLowerCase().includes('overdue')) { 
+        let overdue = tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done');
+        response = `📋 Overdue (${overdue.length}): ` + overdue.map(t => `${t.title} (${t.dueDate})`).join(', ');
+      }
+      else response = "Try: create a card called 'Demo' or delete 'Old task' or 'show overdue'";
       addAIMessage(response);
-    }, 1000);
+    }, 800);
   }
   
-  // Show DeepSeek actions
-  function showDeepSeekActions() {
-    showCreateModal('deepseek', null);
-  }
+  function showDeepSeekActions() { showCreateModal('deepseek',null); }
   
-  // Export data
-  function exportData(format) {
-    const filteredTasks = getFilteredTasks();
-    
-    if (format === 'json') {
-      const dataStr = JSON.stringify(filteredTasks, null, 2);
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-      
-      const exportFileDefaultName = `tasks_${new Date().toISOString().slice(0,10)}.json`;
-      
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
-      
-      showToast('JSON export completed!', 'success');
-      
-    } else if (format === 'csv') {
-      let csv = 'Title,Source,Priority,Status,Due Date,Assignee,Description\n';
-      
-      filteredTasks.forEach(task => {
-        csv += `"${task.title}",${task.source},${task.priority},${task.status},${task.dueDate || ''},${task.assignee},"${task.description.replace(/"/g, '""')}"\n`;
-      });
-      
-      const dataUri = 'data:text/csv;charset=utf-8,'+ encodeURIComponent(csv);
-      const exportFileDefaultName = `tasks_${new Date().toISOString().slice(0,10)}.csv`;
-      
-      const linkElement = document.createElement('a');
-      linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', exportFileDefaultName);
-      linkElement.click();
-      
-      showToast('CSV export completed!', 'success');
+  function exportData(f) {
+    let data = getFilteredTasks();
+    if(f==='json') { 
+      let str = JSON.stringify(data,null,2); 
+      let uri = 'data:application/json;charset=utf-8,'+encodeURIComponent(str); 
+      let a = document.createElement('a'); 
+      a.href = uri; 
+      a.download = 'tasks.json'; 
+      a.click(); 
+      showToast('JSON exported','success'); 
+    }
+    if(f==='csv') { 
+      let csv = 'Title,Source,Priority,Status,Due Date,Assignee\n'; 
+      data.forEach(t=>csv+=`"${t.title}",${t.source},${t.priority},${t.status},${t.dueDate||''},${t.assignee}\n`); 
+      let uri = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv); 
+      let a = document.createElement('a'); 
+      a.href=uri; 
+      a.download='tasks.csv'; 
+      a.click(); 
+      showToast('CSV exported','success'); 
     }
   }
   
-  // Export PDF
-  function exportPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text('UnifyAI Pro - Task Report', 14, 22);
-    doc.setFontSize(11);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 32);
-    
-    const filteredTasks = getFilteredTasks();
-    
-    const tableColumn = ["Title", "Source", "Priority", "Status", "Due Date", "Assignee"];
-    const tableRows = [];
-    
-    filteredTasks.forEach(task => {
-      const taskData = [
-        task.title.substring(0, 30),
-        task.source,
-        task.priority,
-        task.status,
-        task.dueDate || 'N/A',
-        task.assignee
-      ];
-      tableRows.push(taskData);
-    });
-    
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [108, 99, 255] }
-    });
-    
-    doc.save(`tasks_${new Date().toISOString().slice(0,10)}.pdf`);
-    showToast('PDF report generated!', 'success');
+  function exportPDF() { 
+    const { jsPDF } = window.jspdf; 
+    const doc = new jsPDF(); 
+    doc.text('UnifyAI Report',14,22); 
+    doc.autoTable({ 
+      head:[['Title','Source','Priority','Status','Due Date']], 
+      body:getFilteredTasks().map(t=>[t.title,t.source,t.priority,t.status,t.dueDate||'']) 
+    }); 
+    doc.save('report.pdf'); 
+    showToast('PDF generated','success'); 
   }
   
-  // Show toast notification
-  function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    if (type === 'error') icon = '❌';
-    if (type === 'warning') icon = '⚠️';
-    
-    toast.innerHTML = `${icon} ${message}`;
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
+  function showToast(m,t) { 
+    let c = document.getElementById('toast-container'); 
+    let toast = document.createElement('div'); 
+    toast.className='toast'; 
+    toast.innerHTML = (t==='success'?'✅':t==='error'?'❌':'ℹ️')+' '+m; 
+    c.appendChild(toast); 
+    setTimeout(()=>toast.remove(),3000); 
   }
   
-  // Toggle sidebar on mobile
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+  
+  function setTheme(theme, e) { 
+    if(e) e.preventDefault(); 
+    document.body.classList.toggle('light-theme', theme==='light'); 
+    localStorage.setItem('theme', theme); 
+    document.querySelectorAll('.theme-toggle button').forEach(b=>b.classList.remove('active')); 
+    if(theme==='light') document.querySelector('.theme-toggle button:last-child').classList.add('active'); 
+    else document.querySelector('.theme-toggle button:first-child').classList.add('active'); 
   }
   
-  // Set theme
-  function setTheme(theme) {
-    if (theme === 'light') {
-      document.body.classList.add('light-theme');
-      localStorage.setItem('theme', 'light');
-      
-      // Update toggle buttons
-      document.querySelectorAll('.theme-toggle button').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector('.theme-toggle button:last-child').classList.add('active');
-    } else {
-      document.body.classList.remove('light-theme');
-      localStorage.setItem('theme', 'dark');
-      
-      // Update toggle buttons
-      document.querySelectorAll('.theme-toggle button').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector('.theme-toggle button:first-child').classList.add('active');
-    }
-  }
+  function showDashboard() { renderView(); showToast('Dashboard refreshed','info'); }
   
-  // Show dashboard (refresh)
-  function showDashboard() {
-    renderView();
-    showToast('Dashboard refreshed', 'info');
-  }
+  function initDragAndDrop() {}
 </script>
 </body>
 </html>

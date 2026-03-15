@@ -16,7 +16,7 @@
   <!-- Drag & drop -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
   <style>
-    /* [Previous styles remain the same - keeping them concise for brevity] */
+    /* [Previous styles remain the same] */
     :root {
       --bg: #0a0a0f;
       --surface: #111118;
@@ -51,7 +51,7 @@
       --gmail: #EA4335;
       --deepseek: #4D6CFA;
     }
-    /* [All previous styles from the working version] */
+    /* [All the previous CSS remains exactly the same] */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Syne', sans-serif;
@@ -409,12 +409,14 @@
       display: flex;
       border-bottom: 1px solid var(--border);
       margin-bottom: 16px;
+      overflow-x: auto;
     }
     .tab {
       padding: 8px 16px;
       cursor: pointer;
       color: var(--muted);
       border-bottom: 2px solid transparent;
+      white-space: nowrap;
     }
     .tab.active {
       color: var(--accent);
@@ -448,6 +450,16 @@
     .refresh-btn:hover {
       opacity: 0.9;
     }
+    .analysis-result {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -468,7 +480,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="ai-badge">
       <div><div class="ai-pulse"></div></div>
-      <div><div class="ai-badge-text">Universal AI Controller</div><div class="ai-badge-sub" id="ai-source-status">Loading Trello boards...</div></div>
+      <div><div class="ai-badge-text">Universal AI Controller</div><div class="ai-badge-sub" id="ai-source-status">DeepSeek: Not Configured</div></div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
@@ -511,7 +523,7 @@
         </div>
       </div>
       <div class="source-card" onclick="filterSource('deepseek')">
-        <div class="source-dot connected" style="background: var(--deepseek);" id="deepseek-dot"></div>
+        <div class="source-dot" style="background: var(--deepseek);" id="deepseek-dot"></div>
         <span class="source-card-name">DeepSeek AI</span>
         <span class="source-card-count" id="count-deepseek">0</span>
         <div class="source-actions">
@@ -579,28 +591,26 @@
 
   <div class="ai-panel" id="ai-panel">
     <div class="panel-header">
-      <div><div class="panel-title">Universal AI Controller</div><div class="panel-subtitle">Managing all sources</div></div>
-      <div class="deepseek-badge" onclick="showQuickCreate()"><i class="fas fa-bolt"></i> Quick Create</div>
+      <div><div class="panel-title">DeepSeek AI Assistant</div><div class="panel-subtitle" id="deepseek-status">API Key: Not Configured</div></div>
+      <div class="deepseek-badge" onclick="openDeepSeekConfig()"><i class="fas fa-key"></i> Configure</div>
     </div>
     <div class="chat-area" id="chat-area">
-      <div class="msg ai"><div class="msg-bubble">👋 I'm your Universal AI Controller. I can manage ALL your sources:
-• 📋 **Trello**: Create, update, move cards
-• 🔷 **Jira**: Create, update, transition issues
-• 💬 **Slack**: Send messages, create channels
-• 📧 **Gmail**: Send emails, manage threads
-• 🤖 **DeepSeek**: Generate insights
+      <div class="msg ai"><div class="msg-bubble">👋 I'm DeepSeek AI. To use me, please configure your DeepSeek API key in Settings.
 
-Try: "Create a high priority task in Jira" or "Send a Slack message to #general"</div></div>
+Once configured, I can:
+• Analyze your tasks intelligently
+• Suggest priorities
+• Generate summaries
+• Answer questions about your data</div></div>
     </div>
     <div class="quick-prompts">
-      <button class="quick-prompt" onclick="sendQuickPrompt('Create a new Trello card for Q4 planning')">➕ New Trello</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Create a Jira bug ticket for login issue')">🐞 New Jira</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Send Slack message to #general: Meeting at 3pm')">💬 Slack</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Send email to team@company.com about sprint')">📧 Gmail</button>
       <button class="quick-prompt" onclick="sendQuickPrompt('Analyze all high priority items')">🔍 Analyze</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Summarize my tasks')">📊 Summarize</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('What are my priorities?')">🎯 Priorities</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt('Show me overdue items')">⚠️ Overdue</button>
     </div>
     <div class="chat-input-area">
-      <textarea class="chat-input" id="chat-input" placeholder="Ask me to manage anything..." rows="1"></textarea>
+      <textarea class="chat-input" id="chat-input" placeholder="Ask DeepSeek AI..." rows="1"></textarea>
       <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
   </div>
@@ -609,25 +619,74 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
 <!-- Configuration Modal -->
 <div class="modal-overlay" id="config-modal" style="display: none;">
   <div class="modal">
-    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> Trello Configuration</h2>
+    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> API Configuration</h2>
     
-    <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-      <p style="margin-bottom: 16px;">Your Trello API key is: <code style="background: var(--surface); padding: 4px 8px; border-radius: 4px;">223cdeaf54b7f1b742389ef7784de5ef</code></p>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Trello Token</label>
-        <input type="text" id="trello-token-input" class="token-input" placeholder="Paste your Trello token (ATT...)" value="">
-        <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Save Token & Load Boards</button>
-      </div>
-      
-      <div style="margin-top: 16px;">
-        <p style="color: var(--muted); font-size: 12px;">Don't have a token? <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=223cdeaf54b7f1b742389ef7784de5ef" target="_blank" style="color: var(--accent);">Generate one here</a></p>
+    <div class="tab-container">
+      <div class="tab active" onclick="switchConfigTab('trello')">Trello</div>
+      <div class="tab" onclick="switchConfigTab('deepseek')">DeepSeek AI</div>
+      <div class="tab" onclick="switchConfigTab('other')">Other</div>
+    </div>
+    
+    <!-- Trello Config -->
+    <div id="config-trello" class="config-section">
+      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
+        <p style="margin-bottom: 16px;">Your Trello API key is: <code style="background: var(--surface); padding: 4px 8px; border-radius: 4px;">223cdeaf54b7f1b742389ef7784de5ef</code></p>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Trello Token</label>
+          <input type="text" id="trello-token-input" class="token-input" placeholder="Paste your Trello token (ATT...)" value="">
+          <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Save Token & Load Boards</button>
+        </div>
+        
+        <div style="margin-top: 16px;">
+          <p style="color: var(--muted); font-size: 12px;">Don't have a token? <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=223cdeaf54b7f1b742389ef7784de5ef" target="_blank" style="color: var(--accent);">Generate one here</a></p>
+        </div>
       </div>
     </div>
     
-    <div style="display: flex; gap: 12px;">
+    <!-- DeepSeek Config -->
+    <div id="config-deepseek" class="config-section" style="display: none;">
+      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
+        <h3 style="margin-bottom: 16px;">DeepSeek AI Configuration</h3>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">DeepSeek API Key</label>
+          <input type="password" id="deepseek-api-key" class="token-input" placeholder="sk-..." value="">
+          <p style="color: var(--muted); font-size: 11px; margin-top: 4px;">Get your API key from <a href="https://platform.deepseek.com/" target="_blank" style="color: var(--accent);">DeepSeek Platform</a></p>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">API Endpoint (optional)</label>
+          <input type="text" id="deepseek-endpoint" class="token-input" placeholder="https://api.deepseek.com/v1/chat/completions" value="https://api.deepseek.com/v1/chat/completions">
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Model</label>
+          <select id="deepseek-model" class="board-selector">
+            <option value="deepseek-chat">deepseek-chat</option>
+            <option value="deepseek-coder">deepseek-coder</option>
+            <option value="deepseek-chat-v2.5">deepseek-chat-v2.5</option>
+          </select>
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <button class="sync-btn" style="flex: 1;" onclick="testDeepSeekConnection()">Test Connection</button>
+          <button class="sync-btn" style="flex: 1;" onclick="saveDeepSeekConfig()">Save Configuration</button>
+        </div>
+        
+        <div id="deepseek-test-result" style="margin-top: 16px; padding: 12px; border-radius: 6px; display: none;"></div>
+      </div>
+    </div>
+    
+    <!-- Other Sources Config -->
+    <div id="config-other" class="config-section" style="display: none;">
+      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
+        <p style="color: var(--muted);">Other integrations are in demo mode with sample data.</p>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 12px; margin-top: 20px;">
       <button class="sync-btn secondary" onclick="closeConfig()" style="flex: 1;">Close</button>
-      <button class="sync-btn" onclick="testTrelloConnection()" style="flex: 1;">Test Connection</button>
     </div>
   </div>
 </div>
@@ -688,7 +747,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
-    <!-- Other forms (Jira, Slack, Gmail, DeepSeek) remain the same as before -->
+    <!-- Jira Form -->
     <div id="jira-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Project Key</label>
@@ -728,6 +787,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
+    <!-- Slack Form -->
     <div id="slack-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Channel</label>
@@ -744,6 +804,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
+    <!-- Gmail Form -->
     <div id="gmail-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">To</label>
@@ -764,6 +825,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       </div>
     </div>
     
+    <!-- DeepSeek Form -->
     <div id="deepseek-form" class="source-form" style="display: none;">
       <div style="margin-bottom: 16px;">
         <label style="display: block; margin-bottom: 8px; color: var(--muted);">Analysis Type</label>
@@ -772,16 +834,21 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           <option value="priorities">Priority Analysis</option>
           <option value="deadlines">Deadline Forecast</option>
           <option value="workload">Workload Distribution</option>
+          <option value="custom">Custom Analysis</option>
         </select>
       </div>
       <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Focus</label>
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Custom Prompt (for custom analysis)</label>
+        <textarea id="deepseek-prompt" placeholder="e.g., What are the most urgent tasks based on due dates and priorities?" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Focus (optional)</label>
         <input type="text" id="deepseek-focus" placeholder="e.g., high priority tasks, overdue items" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
       </div>
       <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Generate insight</label>
-        <button class="sync-btn" style="width:100%;" onclick="generateDeepSeekAnalysis()">Generate Analysis</button>
+        <button class="sync-btn" style="width:100%;" onclick="generateDeepSeekAnalysis()">Generate Analysis with AI</button>
       </div>
+      <div id="deepseek-analysis-result" class="analysis-result" style="display: none;"></div>
     </div>
     
     <div style="display: flex; gap: 12px; margin-top: 20px;">
@@ -812,11 +879,22 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
     const TRELLO_API_KEY = '223cdeaf54b7f1b742389ef7784de5ef';
     let TRELLO_TOKEN = localStorage.getItem('trello_token') || '';
     
+    // DeepSeek Configuration
+    let DEEPSEEK_API_KEY = localStorage.getItem('deepseek_api_key') || '';
+    let DEEPSEEK_ENDPOINT = localStorage.getItem('deepseek_endpoint') || 'https://api.deepseek.com/v1/chat/completions';
+    let DEEPSEEK_MODEL = localStorage.getItem('deepseek_model') || 'deepseek-chat';
+    
     const API_KEYS = {
       trello: {
         key: TRELLO_API_KEY,
         token: TRELLO_TOKEN,
         connected: !!TRELLO_TOKEN
+      },
+      deepseek: {
+        key: DEEPSEEK_API_KEY,
+        endpoint: DEEPSEEK_ENDPOINT,
+        model: DEEPSEEK_MODEL,
+        connected: !!DEEPSEEK_API_KEY
       },
       jira: {
         key: localStorage.getItem('jira_key') || 'sample-jira-key',
@@ -830,11 +908,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       gmail: {
         key: localStorage.getItem('gmail_key') || 'sample-gmail-key',
         clientId: localStorage.getItem('gmail_client') || 'sample-client-id',
-        connected: true
-      },
-      deepseek: {
-        key: 'sk-ds-kb8x7m3q5r2w9y4t6p1z8n3m',
-        endpoint: 'https://api.deepseek.com/v1/chat/completions',
         connected: true
       }
     };
@@ -857,7 +930,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
 
     // Initialize with sample data
     const SAMPLE_ITEMS = [
-      // Trello cards (sample until real data loads)
       { 
         id: 'trello-sample-1', source: 'trello', type: 'card',
         name: 'Design system implementation', 
@@ -867,10 +939,244 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         due: '2026-04-20',
         boardName: 'Sample Board',
         labels: ['design', 'frontend']
+      },
+      { 
+        id: 'jira-sample-1', source: 'jira', type: 'issue',
+        key: 'PROJ-123',
+        title: 'Fix login authentication', 
+        description: 'Users cannot log in with Google',
+        status: 'In Progress', priority: 'High', 
+        assignee: 'John Doe', 
+        due_date: '2026-04-15',
+        project: 'PROJ'
+      },
+      { 
+        id: 'slack-sample-1', source: 'slack', type: 'message',
+        title: '#general: Team meeting', 
+        description: 'Please join the huddle',
+        status: 'active', priority: 'medium', 
+        channel: 'general', 
+        timestamp: new Date().toISOString()
+      },
+      { 
+        id: 'gmail-sample-1', source: 'gmail', type: 'email',
+        title: 'Project Update', 
+        description: 'New requirements for Q3',
+        status: 'unread', priority: 'high', 
+        from: 'client@company.com', 
+        date: new Date().toISOString().split('T')[0]
       }
     ];
 
     allItems = [...SAMPLE_ITEMS];
+
+    // ========== DEEPSEEK FUNCTIONS ==========
+    
+    window.openDeepSeekConfig = function() {
+      openConfig();
+      switchConfigTab('deepseek');
+    };
+
+    window.switchConfigTab = function(tab) {
+      document.querySelectorAll('.config-section').forEach(s => s.style.display = 'none');
+      document.getElementById(`config-${tab}`).style.display = 'block';
+      
+      document.querySelectorAll('#config-modal .tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // Load values
+      if (tab === 'deepseek') {
+        document.getElementById('deepseek-api-key').value = DEEPSEEK_API_KEY;
+        document.getElementById('deepseek-endpoint').value = DEEPSEEK_ENDPOINT;
+        document.getElementById('deepseek-model').value = DEEPSEEK_MODEL;
+      } else if (tab === 'trello') {
+        document.getElementById('trello-token-input').value = TRELLO_TOKEN;
+      }
+    };
+
+    window.saveDeepSeekConfig = function() {
+      const apiKey = document.getElementById('deepseek-api-key').value.trim();
+      const endpoint = document.getElementById('deepseek-endpoint').value.trim();
+      const model = document.getElementById('deepseek-model').value;
+      
+      if (apiKey) {
+        DEEPSEEK_API_KEY = apiKey;
+        DEEPSEEK_ENDPOINT = endpoint;
+        DEEPSEEK_MODEL = model;
+        
+        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('deepseek_endpoint', endpoint);
+        localStorage.setItem('deepseek_model', model);
+        
+        API_KEYS.deepseek.key = apiKey;
+        API_KEYS.deepseek.endpoint = endpoint;
+        API_KEYS.deepseek.model = model;
+        API_KEYS.deepseek.connected = true;
+        
+        document.getElementById('deepseek-dot').className = 'source-dot connected';
+        document.getElementById('deepseek-status').innerHTML = 'API Key: Configured';
+        
+        showToast('✅ DeepSeek configuration saved', 'success');
+        testDeepSeekConnection();
+      } else {
+        showToast('❌ Please enter your DeepSeek API key', 'error');
+      }
+    };
+
+    window.testDeepSeekConnection = async function() {
+      const apiKey = document.getElementById('deepseek-api-key').value.trim() || DEEPSEEK_API_KEY;
+      const endpoint = document.getElementById('deepseek-endpoint').value.trim() || DEEPSEEK_ENDPOINT;
+      
+      if (!apiKey) {
+        showToast('❌ Please enter your DeepSeek API key first', 'error');
+        return;
+      }
+      
+      const resultDiv = document.getElementById('deepseek-test-result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 'Testing connection...';
+      resultDiv.style.background = 'var(--surface2)';
+      
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: document.getElementById('deepseek-model').value,
+            messages: [
+              { role: 'system', content: 'You are a helpful assistant.' },
+              { role: 'user', content: 'Say "Connection successful" if you can read this.' }
+            ],
+            max_tokens: 50
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = '✅ Connection successful! DeepSeek AI is ready to use.';
+          resultDiv.style.background = 'rgba(0,212,170,0.1)';
+          resultDiv.style.color = 'var(--accent2)';
+          showToast('✅ DeepSeek connection successful', 'success');
+        } else {
+          const error = await response.text();
+          throw new Error(error);
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `❌ Connection failed: ${error.message}`;
+        resultDiv.style.background = 'rgba(255,71,87,0.1)';
+        resultDiv.style.color = 'var(--danger)';
+        showToast('❌ DeepSeek connection failed', 'error');
+      }
+    };
+
+    async function callDeepSeekAPI(prompt, systemPrompt = 'You are a helpful AI assistant that analyzes task management data.') {
+      if (!API_KEYS.deepseek.connected) {
+        showToast('❌ Please configure DeepSeek API key first', 'error');
+        openDeepSeekConfig();
+        return null;
+      }
+      
+      try {
+        const response = await fetch(DEEPSEEK_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: DEEPSEEK_MODEL,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } catch (error) {
+        console.error('DeepSeek API error:', error);
+        showToast('❌ Error calling DeepSeek API: ' + error.message, 'error');
+        return null;
+      }
+    }
+
+    window.generateDeepSeekAnalysis = async function() {
+      if (!API_KEYS.deepseek.connected) {
+        showToast('❌ Please configure DeepSeek API key first', 'error');
+        openDeepSeekConfig();
+        return;
+      }
+      
+      const type = document.getElementById('deepseek-type').value;
+      const customPrompt = document.getElementById('deepseek-prompt').value;
+      const focus = document.getElementById('deepseek-focus').value;
+      
+      // Prepare data context
+      const tasksContext = allItems.map(item => {
+        return `- [${item.source}] ${item.title || item.name || 'Untitled'} (Priority: ${item.priority || 'N/A'}, Status: ${item.status || 'N/A'}, Due: ${item.due || item.due_date || 'No due date'})`;
+      }).join('\n');
+      
+      let prompt = '';
+      let systemPrompt = 'You are an AI project management assistant analyzing tasks across Trello, Jira, Slack, and Gmail. Provide concise, actionable insights.';
+      
+      switch(type) {
+        case 'summary':
+          prompt = `Please provide a summary of these tasks:\n${tasksContext}\n\nFocus on: ${focus || 'overall status'}`;
+          break;
+        case 'priorities':
+          prompt = `Analyze the priorities of these tasks and suggest which should be addressed first:\n${tasksContext}`;
+          break;
+        case 'deadlines':
+          prompt = `Review the deadlines and identify any potential issues or bottlenecks:\n${tasksContext}`;
+          break;
+        case 'workload':
+          prompt = `Analyze the workload distribution and suggest optimizations:\n${tasksContext}`;
+          break;
+        case 'custom':
+          prompt = customPrompt || 'Please analyze these tasks and provide insights';
+          if (tasksContext) {
+            prompt += `\n\nTasks:\n${tasksContext}`;
+          }
+          break;
+      }
+      
+      if (focus) {
+        prompt += `\n\nAdditional focus: ${focus}`;
+      }
+      
+      showToast('🤔 DeepSeek is thinking...', 'info');
+      
+      const analysis = await callDeepSeekAPI(prompt, systemPrompt);
+      
+      if (analysis) {
+        const resultDiv = document.getElementById('deepseek-analysis-result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = analysis.replace(/\n/g, '<br>');
+        
+        // Create a DeepSeek item
+        createItem('deepseek', {
+          title: `${type} Analysis`,
+          description: analysis,
+          status: 'completed',
+          priority: 'medium',
+          focus: focus,
+          insights: [analysis],
+          timestamp: new Date().toISOString()
+        });
+        
+        addMessage('ai', `🔍 **DeepSeek Analysis**\n\n${analysis}`);
+      }
+    };
 
     // ========== TRELLO FUNCTIONS ==========
     
@@ -890,32 +1196,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       }
     };
 
-    window.testTrelloConnection = function() {
-      const token = document.getElementById('trello-token-input').value.trim() || TRELLO_TOKEN;
-      if (!token) {
-        showToast('❌ No token provided', 'error');
-        return;
-      }
-      
-      showToast('Testing connection...', 'info');
-      
-      fetch(`https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${token}`)
-        .then(response => {
-          if (response.ok) {
-            showToast('✅ Connection successful!', 'success');
-            return response.json();
-          } else {
-            throw new Error('Invalid token');
-          }
-        })
-        .then(boards => {
-          showToast(`Found ${boards.length} boards`, 'success');
-        })
-        .catch(error => {
-          showToast('❌ Connection failed: ' + error.message, 'error');
-        });
-    };
-
     async function loadTrelloBoards() {
       if (!API_KEYS.trello.token) {
         document.getElementById('trello-board').innerHTML = '<option value="">Please configure token in Config</option>';
@@ -931,7 +1211,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         
         trelloBoards = await response.json();
         
-        // Update board selector
         const boardSelect = document.getElementById('trello-board');
         if (boardSelect) {
           boardSelect.innerHTML = '<option value="">Select a board</option>';
@@ -941,11 +1220,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         }
         
         document.getElementById('trello-board-status').innerHTML = `✅ Loaded ${trelloBoards.length} boards`;
-        
-        // Update connection dot
         document.getElementById('trello-dot').className = 'source-dot connected';
-        
-        showToast(`✅ Loaded ${trelloBoards.length} Trello boards`, 'success');
         
         return trelloBoards;
       } catch (error) {
@@ -981,11 +1256,9 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       if (!API_KEYS.trello.token) return;
       
       try {
-        // First get boards
         const boards = await loadTrelloBoards();
         if (!boards || boards.length === 0) return;
         
-        // Then get cards from each board
         let allTrelloCards = [];
         
         for (const board of boards) {
@@ -1012,11 +1285,10 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           allTrelloCards = [...allTrelloCards, ...boardCards];
         }
         
-        // Remove sample Trello cards and add real ones
         allItems = allItems.filter(i => i.source !== 'trello' || i.id.startsWith('trello-sample'));
         allItems = [...allTrelloCards, ...allItems];
         
-        document.getElementById('ai-source-status').innerHTML = `Loaded ${allTrelloCards.length} Trello cards`;
+        document.getElementById('ai-source-status').innerHTML = `DeepSeek: ${API_KEYS.deepseek.connected ? 'Connected' : 'Not Configured'}`;
         filterItems();
         showToast(`✅ Loaded ${allTrelloCards.length} Trello cards`, 'success');
         
@@ -1113,7 +1385,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         
         const newCard = await response.json();
         
-        // Add priority label if provided
         if (data.priority && data.priority !== 'medium') {
           const labelColor = data.priority === 'high' ? 'red' : 'green';
           await fetch(`https://api.trello.com/1/cards/${newCard.id}/labels?key=${TRELLO_API_KEY}&token=${API_KEYS.trello.token}`, {
@@ -1123,7 +1394,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           });
         }
         
-        // Add to local items
         const board = trelloBoards.find(b => b.id === data.board);
         createItem('trello', {
           id: newCard.id,
@@ -1144,7 +1414,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
     };
 
     window.createJiraIssue = async function(data) {
-      // Simulate Jira creation
       return createItem('jira', {
         key: `${data.project}-${Math.floor(Math.random() * 1000)}`,
         title: data.summary,
@@ -1184,42 +1453,6 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       });
     };
 
-    window.generateDeepSeekAnalysis = async function() {
-      const type = document.getElementById('deepseek-type')?.value || 'summary';
-      const focus = document.getElementById('deepseek-focus')?.value || 'all items';
-      
-      let analysis = '';
-      switch(type) {
-        case 'summary':
-          analysis = `Found ${allItems.length} total items across all sources. ${allItems.filter(i => i.priority === 'high').length} high priority, ${allItems.filter(i => i.status === 'in_progress').length} in progress.`;
-          break;
-        case 'priorities':
-          analysis = `High priority items: ${allItems.filter(i => i.priority === 'high').map(i => `• ${i.title || i.name}`).join('\n')}`;
-          break;
-        case 'deadlines':
-          const overdue = allItems.filter(i => (i.due || i.due_date) && new Date(i.due || i.due_date) < new Date());
-          analysis = `Overdue items: ${overdue.length}. Next 5 deadlines: ${overdue.slice(0,5).map(i => `${i.title || i.name} (${i.due || i.due_date})`).join(', ')}`;
-          break;
-        case 'workload':
-          const assignees = [...new Set(allItems.map(i => i.assignee || i.from).filter(Boolean))];
-          analysis = `Workload distribution: ${assignees.map(a => `${a}: ${allItems.filter(i => i.assignee === a || i.from === a).length} items`).join(', ')}`;
-          break;
-      }
-      
-      const insight = createItem('deepseek', {
-        title: `${type} Analysis`,
-        description: analysis,
-        status: 'completed',
-        priority: 'medium',
-        focus: focus,
-        insights: [analysis]
-      });
-      
-      addMessage('ai', `🔍 **DeepSeek Analysis**\n\n${analysis}`);
-      closeCreateModal();
-      return insight;
-    };
-
     // ========== MODAL HANDLERS ==========
     
     window.showCreateModal = function(source, event) {
@@ -1235,6 +1468,8 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       
       if (source === 'trello') {
         loadTrelloBoards();
+      } else if (source === 'deepseek') {
+        document.getElementById('deepseek-analysis-result').style.display = 'none';
       }
       
       document.getElementById('create-modal').style.display = 'flex';
@@ -1298,7 +1533,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           break;
           
         case 'deepseek':
-          await generateDeepSeekAnalysis();
+          // Already handled by generate button
           return;
       }
       
@@ -1634,7 +1869,7 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       }
     };
 
-    // ========== AI CHAT ==========
+    // ========== AI CHAT WITH DEEPSEEK ==========
     window.sendMessage = function() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
@@ -1646,6 +1881,14 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
       setTimeout(async () => {
         const lowerText = text.toLowerCase();
         let response = '';
+        
+        // Check if DeepSeek is configured
+        if (!API_KEYS.deepseek.connected && 
+            (lowerText.includes('analyze') || lowerText.includes('summarize') || lowerText.includes('what') || lowerText.includes('how'))) {
+          response = "⚠️ **DeepSeek API Not Configured**\n\nPlease configure your DeepSeek API key in Config > DeepSeek AI to use AI analysis features.\n\nYou can still use other features like creating tasks and managing sources.";
+          addMessage('ai', response);
+          return;
+        }
         
         if (lowerText.includes('trello') && (lowerText.includes('create') || lowerText.includes('new'))) {
           const title = text.replace(/.*create.*?(?:card|task)?\s*(?:called|named)?\s*["']?([^"']+)["']?/i, '$1') || 'New Task';
@@ -1681,32 +1924,21 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           response = `✅ Sent email to ${to}`;
         }
         
-        else if (lowerText.includes('analyze') || lowerText.includes('summary')) {
-          const highCount = allItems.filter(i => (i.priority || '').toLowerCase() === 'high' || i.priority === 'Critical').length;
-          const overdueCount = allItems.filter(i => {
-            const due = i.due || i.due_date;
-            return due && new Date(due) < new Date() && 
-                   !['done', 'completed'].includes((i.status || '').toLowerCase());
-          }).length;
-          
-          response = `🔍 **Unified Analysis**\n\n` +
-                    `**Total Items:** ${allItems.length}\n` +
-                    `**By Source:** Trello: ${allItems.filter(i => i.source === 'trello').length}, ` +
-                    `Jira: ${allItems.filter(i => i.source === 'jira').length}, ` +
-                    `Slack: ${allItems.filter(i => i.source === 'slack').length}, ` +
-                    `Gmail: ${allItems.filter(i => i.source === 'gmail').length}\n` +
-                    `**High Priority:** ${highCount}\n` +
-                    `**Overdue:** ${overdueCount}\n` +
-                    `**In Progress:** ${allItems.filter(i => (i.status || '').toLowerCase().includes('progress')).length}`;
+        else if (lowerText.includes('analyze') || lowerText.includes('summarize') || lowerText.includes('what')) {
+          // Use DeepSeek for analysis
+          const prompt = `Based on the following tasks, please ${text}\n\nTasks:\n${allItems.map(i => `- [${i.source}] ${i.title || i.name} (Priority: ${i.priority}, Status: ${i.status})`).join('\n')}`;
+          const analysis = await callDeepSeekAPI(prompt);
+          response = analysis || "I couldn't analyze the tasks at this moment.";
         }
         
         else {
-          response = `🤖 **Universal AI Controller**\n\nI can help you manage all your sources. Try:\n` +
+          response = `🤖 **DeepSeek AI Assistant**\n\nI can help you manage all your sources. Try:\n` +
                     `• "Create a new Trello card for Q4 planning"\n` +
                     `• "Create a high priority Jira bug for login issue"\n` +
                     `• "Send a Slack message to #general about the meeting"\n` +
                     `• "Send an email to team@company.com about sprint"\n` +
-                    `• "Analyze all my tasks"`;
+                    `• "Analyze all my tasks"` +
+                    `\n\n⚠️ Note: For AI analysis features, please configure your DeepSeek API key in Config.`;
         }
         
         addMessage('ai', response);
@@ -1817,6 +2049,9 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
     // ========== UI ==========
     window.openConfig = function() { 
       document.getElementById('trello-token-input').value = TRELLO_TOKEN;
+      document.getElementById('deepseek-api-key').value = DEEPSEEK_API_KEY;
+      document.getElementById('deepseek-endpoint').value = DEEPSEEK_ENDPOINT;
+      document.getElementById('deepseek-model').value = DEEPSEEK_MODEL;
       document.getElementById('config-modal').style.display = 'flex'; 
     };
     
@@ -1868,10 +2103,18 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
         document.getElementById('trello-dot').className = 'source-dot connected';
         loadTrelloBoards();
         loadTrelloCards();
-        document.getElementById('ai-source-status').innerHTML = 'Loading Trello boards...';
       } else {
         document.getElementById('trello-dot').className = 'source-dot disconnected';
-        document.getElementById('ai-source-status').innerHTML = 'Configure Trello token in Config';
+      }
+      
+      if (API_KEYS.deepseek.connected) {
+        document.getElementById('deepseek-dot').className = 'source-dot connected';
+        document.getElementById('deepseek-status').innerHTML = 'API Key: Configured';
+        document.getElementById('ai-source-status').innerHTML = 'DeepSeek: Connected';
+      } else {
+        document.getElementById('deepseek-dot').className = 'source-dot disconnected';
+        document.getElementById('deepseek-status').innerHTML = 'API Key: Not Configured';
+        document.getElementById('ai-source-status').innerHTML = 'DeepSeek: Not Configured';
       }
       
       filterItems();
@@ -1899,6 +2142,18 @@ Try: "Create a high priority task in Jira" or "Send a Slack message to #general"
           color: var(--accent2);
           text-align: center;
           font-weight: 600;
+        }
+        .analysis-result {
+          background: var(--surface2);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 16px;
+          margin: 16px 0;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+          max-height: 300px;
+          overflow-y: auto;
         }
       `;
       document.head.appendChild(style);

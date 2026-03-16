@@ -1,1876 +1,2624 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>UnifyAI Pro — Real Trello Integration</title>
-  <!-- Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- FullCalendar -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-  <!-- PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-  <!-- Drag & drop -->
-  <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
-  <style>
-    :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --surface2: #1a1a24;
-      --border: #2a2a3a;
-      --accent: #6c63ff;
-      --accent2: #00d4aa;
-      --danger: #ff4757;
-      --warn: #ffa502;
-      --text: #e8e8f0;
-      --muted: #6b6b88;
-      --trello: #0079BF;
-      --jira: #0052CC;
-      --slack: #E01E5A;
-      --gmail: #EA4335;
-      --deepseek: #4D6CFA;
-    }
-    .light-theme {
-      --bg: #f5f5fa;
-      --surface: #ffffff;
-      --surface2: #f0f0f5;
-      --border: #d0d0e0;
-      --accent: #6c63ff;
-      --accent2: #00a88a;
-      --danger: #e53e3e;
-      --warn: #dd6b20;
-      --text: #1a1a2e;
-      --muted: #6b6b88;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Syne', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-      transition: background 0.3s, color 0.3s;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-    header {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(10,10,15,0.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 16px;
-      display: flex; align-items: center; gap: 16px;
-      height: 64px;
-    }
-    .logo {
-      font-size: 20px; font-weight: 800;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      letter-spacing: -0.5px;
-    }
-    .logo span { font-weight: 400; opacity: 0.6; }
-    nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-    .nav-btn {
-      background: none; border: none; color: var(--muted);
-      font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
-      padding: 8px 12px; border-radius: 8px; cursor: pointer;
-      transition: all 0.2s; letter-spacing: 0.3px;
-    }
-    .nav-btn:hover, .nav-btn.active { background: var(--surface2); color: var(--text); }
-    .nav-btn.active { color: var(--accent); }
-    .theme-toggle {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      padding: 4px;
-      display: flex;
-      gap: 4px;
-      margin-left: 8px;
-    }
-    .theme-toggle button {
-      background: none;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 12px;
-      transition: all 0.2s;
-    }
-    .theme-toggle button.active {
-      background: var(--accent);
-      color: white;
-    }
-    .app { 
-      display: flex; 
-      height: calc(100vh - 64px); 
-      position: relative; 
-      z-index: 1; 
-      overflow: hidden;
-    }
-    .sidebar {
-      width: 280px; flex-shrink: 0;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      overflow-y: auto;
-      transition: transform 0.3s;
-    }
-    .sidebar.collapsed { transform: translateX(-280px); }
-    .sidebar-section { padding: 20px 16px 8px; }
-    .sidebar-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-      color: var(--muted); text-transform: uppercase; margin-bottom: 8px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .source-card {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px; cursor: pointer;
-      transition: all 0.2s; margin-bottom: 2px; border: 1px solid transparent;
-      position: relative;
-    }
-    .source-card:hover { background: var(--surface2); }
-    .source-card.active { background: var(--surface2); border-color: var(--border); }
-    .source-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .source-dot.connected { animation: pulse 2s infinite; }
-    .source-dot.disconnected { opacity: 0.3; }
-    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.85); } }
-    .source-card-name { font-size: 13px; font-weight: 600; flex: 1; }
-    .source-card-count {
-      font-size: 11px; font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      background: var(--surface); padding: 2px 7px; border-radius: 20px; color: var(--muted);
-    }
-    .connect-btn {
-      width: 100%; padding: 8px; border-radius: 8px; border: 1px dashed var(--border);
-      background: none; color: var(--muted); font-family: 'Syne', sans-serif;
-      font-size: 12px; cursor: pointer; transition: all 0.2s; margin-top: 4px;
-    }
-    .connect-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
-    .ai-badge {
-      display: flex; align-items: center; gap: 8px;
-      margin: 16px; padding: 12px; border-radius: 10px;
-      background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(0,212,170,0.1));
-      border: 1px solid rgba(108,99,255,0.2);
-    }
-    .ai-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
-    .ai-badge-text { font-size: 11px; font-weight: 600; color: var(--accent2); }
-    .ai-badge-sub { font-size: 10px; color: var(--muted); }
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
-    .toolbar {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 24px; border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      flex-wrap: wrap;
-    }
-    .search-box {
-      flex: 1; min-width: 200px;
-      display: flex; align-items: center; gap: 10px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 14px;
-    }
-    .search-box input {
-      background: none; border: none; outline: none; color: var(--text);
-      font-family: 'Syne', sans-serif; font-size: 13px; width: 100%;
-    }
-    .search-icon { color: var(--muted); font-size: 14px; }
-    .view-toggle {
-      display: flex; gap: 4px; background: var(--surface2); border-radius: 8px; padding: 2px;
-    }
-    .view-btn {
-      padding: 6px 12px; border: none; background: transparent; color: var(--muted);
-      border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s;
-    }
-    .view-btn.active { background: var(--accent); color: white; }
-    .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
-    .filter-btn {
-      padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border);
-      background: var(--surface2); color: var(--muted); font-family: 'Syne', sans-serif;
-      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
-    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
-    .sync-btn {
-      display: flex; align-items: center; gap: 7px;
-      padding: 8px 16px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      border: none; color: white; font-family: 'Syne', sans-serif;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      transition: all 0.2s; letter-spacing: 0.3px;
-    }
-    .sync-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108,99,255,0.4); }
-    .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .sync-btn.secondary { background: var(--surface2); color: var(--text); }
-    .spin { animation: spin 1s linear infinite; display: inline-block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .content-area { flex: 1; overflow-y: auto; padding: 20px 24px; }
-    .tasks-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px;
-    }
-    .task-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-      transition: all 0.25s; cursor: pointer; position: relative; overflow: hidden;
-    }
-    .task-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .task-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-    .task-card:hover::before { opacity: 1; }
-    .card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-    .source-badge {
-      font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-      padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 1px;
-    }
-    .source-badge.trello { background: rgba(0,121,191,0.15); color: #4db8ff; }
-    .source-badge.jira { background: rgba(0,82,204,0.15); color: #6ba9ff; }
-    .source-badge.slack { background: rgba(224,30,90,0.15); color: #ff6b9d; }
-    .source-badge.gmail { background: rgba(234,67,53,0.15); color: #ff7b6b; }
-    .source-badge.deepseek { background: rgba(77,108,250,0.15); color: #8a9cff; }
-    .card-title { font-size: 14px; font-weight: 600; line-height: 1.4; flex: 1; }
-    .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .priority-badge {
-      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .priority-badge.high { background: rgba(255,71,87,0.15); color: var(--danger); }
-    .priority-badge.medium { background: rgba(255,165,2,0.15); color: var(--warn); }
-    .priority-badge.low { background: rgba(0,212,170,0.15); color: var(--accent2); }
-    .status-badge {
-      font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
-      background: var(--surface2); color: var(--muted);
-    }
-    .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
-    .card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .assignee { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-    .due-date { font-size: 11px; color: var(--muted); margin-left: auto; }
-    .due-date.overdue { color: var(--danger); }
-    .calendar-view { display: flex; flex-direction: column; height: 100%; }
-    #calendar { background: var(--surface); border-radius: 12px; padding: 16px; }
-    .fc { background: var(--surface); }
-    .fc .fc-toolbar-title { color: var(--text); }
-    .fc .fc-button-primary { background: var(--accent); border-color: var(--accent); }
-    .gantt-view { display: flex; flex-direction: column; height: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; padding: 20px; }
-    .gantt-header { display: flex; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
-    .gantt-row { display: flex; align-items: center; margin-bottom: 12px; min-width: 1000px; }
-    .gantt-task-name { width: 200px; font-size: 12px; font-weight: 600; }
-    .gantt-bar-container { flex: 1; height: 40px; background: var(--surface2); border-radius: 20px; position: relative; }
-    .gantt-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 20px; position: absolute; cursor: move; transition: all 0.2s; }
-    .gantt-bar:hover { filter: brightness(1.2); transform: scaleY(1.1); }
-    .ai-panel {
-      width: 380px; flex-shrink: 0;
-      background: var(--surface); border-left: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      transition: transform 0.3s;
-    }
-    .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-    .panel-title { font-size: 15px; font-weight: 700; }
-    .panel-subtitle { font-size: 11px; color: var(--muted); }
-    .deepseek-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, rgba(77,108,250,0.2), rgba(0,212,170,0.2)); color: var(--accent2); border: 1px solid rgba(77,108,250,0.2); cursor: pointer; }
-    .chat-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .msg { max-width: 90%; animation: fadeUp 0.3s ease; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    .msg.user { align-self: flex-end; }
-    .msg.ai { align-self: flex-start; }
-    .msg.system { align-self: center; max-width: 100%; }
-    .msg.system .msg-bubble { background: rgba(108,99,255,0.1); border: 1px solid var(--accent); color: var(--accent2); text-align: center; }
-    .msg-bubble { padding: 10px 14px; border-radius: 10px; font-size: 12px; line-height: 1.55; }
-    .msg.user .msg-bubble { background: var(--accent); color: white; border-radius: 10px 10px 2px 10px; }
-    .msg.ai .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px 10px 10px 2px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
-    .quick-prompts { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); }
-    .quick-prompt { font-size: 11px; padding: 5px 10px; border-radius: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; }
-    .quick-prompt:hover { border-color: var(--accent); color: var(--accent); }
-    .chat-input-area { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-    .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-family: 'Syne', sans-serif; resize: none; outline: none; }
-    .send-btn { width: 40px; height: 40px; border-radius: 8px; background: var(--accent); border: none; color: white; cursor: pointer; transition: all 0.2s; }
-    .send-btn:hover { transform: scale(1.1); }
-    .stats-bar { display: flex; gap: 1px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
-    .stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px; border-radius: 8px; transition: background 0.2s; cursor: default; min-width: 80px; }
-    .stat-item:hover { background: var(--surface2); }
-    .stat-num { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
-    .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; }
-    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; }
-    .toast { padding: 12px 18px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); margin-top: 8px; animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .export-menu { position: relative; display: inline-block; }
-    .export-dropdown { display: none; position: absolute; right: 0; top: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; z-index: 100; }
-    .export-menu:hover .export-dropdown { display: block; }
-    .export-item { padding: 8px 16px; cursor: pointer; white-space: nowrap; border-radius: 4px; }
-    .export-item:hover { background: var(--surface2); }
-    .mobile-menu-toggle { display: none; }
-    @media (max-width: 992px) {
-      .mobile-menu-toggle { display: block; }
-      .sidebar { position: absolute; z-index: 50; }
-      .ai-panel { position: absolute; right: 0; z-index: 50; }
-    }
-    .modal-overlay {
-      position: fixed; top:0; left:0; right:0; bottom:0;
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center; z-index:1000;
-    }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 32px; max-width:600px; width:90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    .spinner {
-      border: 3px solid var(--surface2); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 1s linear infinite;
-    }
-    .connection-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      margin-bottom: 8px;
-    }
-    .api-key-display {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      background: var(--surface);
-      padding: 4px 8px;
-      border-radius: 4px;
-      color: var(--muted);
-    }
-    .board-selector {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 10px;
-      margin: 8px 0;
-      width: 100%;
-      color: var(--text);
-    }
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .action-btn {
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-size: 11px;
-      cursor: pointer;
-    }
-    .action-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .source-actions {
-      display: flex;
-      gap: 4px;
-      margin-left: auto;
-    }
-    .item-actions {
-      display: flex;
-      gap: 4px;
-      margin-top: 8px;
-      justify-content: flex-end;
-    }
-    .item-action-btn {
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      font-size: 10px;
-      cursor: pointer;
-    }
-    .item-action-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .tab-container {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
-      overflow-x: auto;
-    }
-    .tab {
-      padding: 8px 16px;
-      cursor: pointer;
-      color: var(--muted);
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-    }
-    .tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    .token-input-container {
-      background: var(--surface2);
-      padding: 20px;
-      border-radius: 12px;
-      margin: 20px 0;
-    }
-    .token-input {
-      width: 100%;
-      padding: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      margin-bottom: 12px;
-    }
-    .refresh-btn {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      margin-left: 8px;
-    }
-    .refresh-btn:hover {
-      opacity: 0.9;
-    }
-    .analysis-result {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-      margin: 16px 0;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .deepseek-action-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-    .deepseek-action-btn {
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: none;
-      background: var(--surface2);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .deepseek-action-btn:hover {
-      background: var(--accent);
-      color: white;
-    }
-    .deepseek-action-btn.delete:hover {
-      background: var(--danger);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evronai — Task Intelligence Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    /* Dark theme (default) */
+    --bg-dark: #0a0a0f;
+    --surface-dark: #111118;
+    --surface2-dark: #1a1a24;
+    --border-dark: #2a2a3a;
+    --text-dark: #e8e8f0;
+    --muted-dark: #9a9ab0;
+    
+    /* Light theme */
+    --bg-light: #f5f7fb;
+    --surface-light: #ffffff;
+    --surface2-light: #edf0f7;
+    --border-light: #d1d9e6;
+    --text-light: #1e2432;
+    --muted-light: #5f6b7a;
+    
+    /* Accent colors (same for both themes) */
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --danger: #ff4757;
+    --warn: #ffa502;
+    --trello: #0079BF;
+    --jira: #0052CC;
+    --asana: #FC636B;
+    --monday: #F62F5E;
+    --gitlab: #FC6D26;
+    --gmail: #EA4335;
+    --outlook: #0078D4;
+    
+    /* Default theme (dark) */
+    --bg: var(--bg-dark);
+    --surface: var(--surface-dark);
+    --surface2: var(--surface2-dark);
+    --border: var(--border-dark);
+    --text: var(--text-dark);
+    --muted: var(--muted-dark);
+    
+    /* Transitions */
+    --theme-transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+  }
+
+  /* Light theme class */
+  body.light-theme {
+    --bg: var(--bg-light);
+    --surface: var(--surface-light);
+    --surface2: var(--surface2-light);
+    --border: var(--border-light);
+    --text: var(--text-light);
+    --muted: var(--muted-light);
+  }
+
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    transition: var(--theme-transition);
+  }
+  
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    transition: background-image 0.3s ease;
+  }
+
+  /* Light theme grid overlay adjustment */
+  body.light-theme::before {
+    background-image:
+      linear-gradient(rgba(108,99,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.08) 1px, transparent 1px);
+  }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; gap: 24px;
+    height: 64px;
+  }
+  
+  .logo {
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    cursor: pointer;
+  }
+  .logo span { font-weight: 400; opacity: 0.8; }
+  
+  nav { display: flex; gap: 4px; margin-left: auto; }
+  
+  .nav-btn {
+    background: none; border: none; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.3px;
+  }
+  .nav-btn:hover, .nav-btn.active { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { color: var(--accent); }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+  }
+  .theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* MAIN LAYOUT */
+  .app { display: flex; height: calc(100vh - 64px); position: relative; z-index: 1; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 280px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+  
+  .sidebar-section { padding: 20px 16px 8px; }
+  
+  .sidebar-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar-label i { font-size: 12px; }
+  
+  .source-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 2px; border: 1px solid transparent;
+  }
+  .source-card:hover { background: var(--surface2); }
+  .source-card.active { background: var(--surface2); border-color: var(--border); }
+  .source-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .source-card-name { font-size: 13px; font-weight: 600; flex: 1; color: var(--text); }
+  .source-card-count {
+    font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface); padding: 2px 7px; border-radius: 20px; color: var(--muted);
+  }
+  
+  .connect-btn {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px dashed var(--border);
+    background: none; color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 12px; cursor: pointer; transition: all 0.2s; margin-top: 4px;
+  }
+  .connect-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.05); }
+
+  .ai-badge {
+    display: flex; align-items: center; gap: 8px;
+    margin: 16px; padding: 12px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(0,212,170,0.1));
+    border: 1px solid rgba(108,99,255,0.2);
+  }
+  .ai-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.85); } }
+  .ai-badge-text { font-size: 11px; font-weight: 600; color: var(--accent2); }
+  .ai-badge-sub { font-size: 10px; color: var(--muted); }
+
+  /* MAIN CONTENT */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  
+  .search-box {
+    flex: 1; max-width: 360px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px;
+  }
+  .search-box input {
+    background: none; border: none; outline: none; color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: 13px; width: 100%;
+  }
+  .search-box input::placeholder { color: var(--muted); }
+  .search-icon { color: var(--muted); font-size: 14px; }
+  
+  .filter-group { display: flex; gap: 6px; margin-left: auto; }
+  
+  .filter-btn {
+    padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
+  
+  .action-group { display: flex; gap: 6px; }
+  
+  .action-btn {
+    padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .sync-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; color: white; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.3px;
+  }
+  .sync-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108,99,255,0.4); }
+  .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TASKS AREA */
+  .tasks-area { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 20px 24px;
+  }
+  
+  .tasks-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .view-toggle {
+    display: flex; gap: 4px; background: var(--surface2); padding: 2px;
+    border-radius: 8px; border: 1px solid var(--border);
+  }
+  .view-toggle button {
+    padding: 6px 12px; border-radius: 6px; border: none;
+    background: transparent; color: var(--muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .view-toggle button.active {
+    background: var(--surface); color: var(--text);
+  }
+  
+  /* KANBAN VIEW */
+  .kanban-board {
+    display: flex; gap: 20px; height: 100%; overflow-x: auto; padding-bottom: 10px;
+  }
+  .kanban-column {
+    flex: 1; min-width: 300px; background: var(--surface2); border-radius: 12px;
+    border: 1px solid var(--border); display: flex; flex-direction: column;
+    max-height: 100%;
+  }
+  .column-header {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    font-weight: 600; display: flex; align-items: center; gap: 8px;
+    color: var(--text);
+  }
+  .column-count {
+    margin-left: auto; font-size: 12px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .column-tasks {
+    flex: 1; overflow-y: auto; padding: 12px; min-height: 200px;
+  }
+  .column-tasks.drag-over {
+    background: rgba(108,99,255,0.1); border-radius: 8px;
+  }
+  
+  /* GRID VIEW */
+  .tasks-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+  }
+
+  /* TASK CARD */
+  .task-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+    transition: all 0.25s; cursor: grab; position: relative; overflow: hidden;
+    user-select: none;
+  }
+  .task-card.dragging {
+    opacity: 0.5; transform: scale(0.98); cursor: grabbing;
+  }
+  .task-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .task-card:hover { border-color: rgba(108,99,255,0.4); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .task-card:hover::before { opacity: 1; }
+  .task-card.highlight { border-color: rgba(0,212,170,0.3); }
+  .task-card.highlight::before { opacity: 1; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .task-card.email { border-left: 3px solid var(--gmail); }
+
+  .card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  
+  .source-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+  }
+  .source-badge.trello { background: rgba(0,121,191,0.15); color: #4db8ff; }
+  .source-badge.jira { background: rgba(0,82,204,0.15); color: #6ba9ff; }
+  .source-badge.asana { background: rgba(252,99,107,0.15); color: #fc636b; }
+  .source-badge.monday { background: rgba(246,47,94,0.15); color: #f62f5e; }
+  .source-badge.gitlab { background: rgba(252,109,38,0.15); color: #fc6d26; }
+  .source-badge.gmail { background: rgba(234,67,53,0.15); color: #ea4335; }
+  .source-badge.outlook { background: rgba(0,120,212,0.15); color: #0078d4; }
+  .source-badge.unified { background: rgba(108,99,255,0.15); color: var(--accent); }
+
+  .email-indicator {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--muted); margin-left: 8px;
+  }
+  .email-indicator i { font-size: 10px; }
+  .email-indicator.important { color: var(--danger); }
+  .email-indicator.unread { color: var(--accent); }
+
+  .card-title { 
+    font-size: 14px; font-weight: 600; line-height: 1.4; flex: 1;
+    display: flex; align-items: center; gap: 4px;
+    color: var(--text);
+  }
+  
+  .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  
+  .priority-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .priority-badge.high { background: rgba(255,71,87,0.15); color: var(--danger); }
+  .priority-badge.medium { background: rgba(255,165,2,0.15); color: var(--warn); }
+  .priority-badge.low { background: rgba(0,212,170,0.15); color: var(--accent2); }
+  
+  .status-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    background: var(--surface2); color: var(--muted);
+  }
+  
+  .card-actions {
+    position: absolute; top: 12px; right: 12px; opacity: 0;
+    transition: opacity 0.2s; display: flex; gap: 4px;
+  }
+  .task-card:hover .card-actions { opacity: 1; }
+  
+  .card-action-btn {
+    width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+    transition: all 0.2s;
+  }
+  .card-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  
+  .card-desc { 
+    font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  
+  .email-attachment {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--surface2); padding: 2px 6px; border-radius: 4px;
+    font-size: 10px;
+    color: var(--text);
+  }
+  
+  .card-footer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .assignee { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .due-date { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .due-date.overdue { color: var(--danger); }
+  
+  .ai-insight {
+    margin-top: 10px; padding: 8px 10px; border-radius: 6px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(0,212,170,0.08));
+    border: 1px solid rgba(108,99,255,0.15); 
+    font-size: 11px; 
+    color: var(--accent2);
+    line-height: 1.4; 
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ai-insight-label { 
+    font-size: 9px; 
+    font-weight: 700; 
+    letter-spacing: 1px; 
+    color: var(--muted); 
+    margin-bottom: 3px; 
+    text-transform: uppercase; 
+  }
+
+  /* AI PANEL - FIXED VISIBILITY */
+  .ai-panel {
+    width: 380px; 
+    flex-shrink: 0;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; 
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+  }
+
+  .panel-header {
+    padding: 16px 20px; 
+    border-bottom: 1px solid var(--border);
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    background: var(--surface);
+  }
+
+  .panel-title { 
+    font-size: 15px; 
+    font-weight: 700; 
+    color: var(--text) !important;
+  }
+
+  .panel-subtitle { 
+    font-size: 11px; 
+    color: var(--muted) !important;
+  }
+
+  .deepseek-badge {
+    margin-left: auto; 
+    font-size: 10px; 
+    font-weight: 700;
+    padding: 4px 10px; 
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.2), rgba(0,212,170,0.2));
+    color: var(--accent2); 
+    border: 1px solid rgba(0,212,170,0.2);
+  }
+
+  .chat-area { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 16px;
+    background: var(--surface);
+  }
+
+  .msg {
+    max-width: 90%; 
+    animation: fadeUp 0.3s ease;
+    margin-bottom: 8px;
+  }
+
+  @keyframes fadeUp { 
+    from { opacity:0; transform:translateY(8px); } 
+    to { opacity:1; transform:translateY(0); } 
+  }
+
+  .msg.user { 
+    align-self: flex-end; 
+  }
+
+  .msg.ai { 
+    align-self: flex-start; 
+  }
+
+  .msg-bubble {
+    padding: 12px 16px; 
+    border-radius: 12px; 
+    font-size: 13px; 
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  /* User message */
+  .msg.user .msg-bubble { 
+    background: var(--accent); 
+    color: #ffffff !important; 
+    border-radius: 12px 12px 2px 12px; 
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(108,99,255,0.3);
+  }
+
+  /* AI message - FIXED VISIBILITY */
+  .msg.ai .msg-bubble {
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    border-radius: 12px 12px 12px 2px;
+    font-family: 'JetBrains Mono', monospace; 
+    font-size: 12px;
+    color: var(--text) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-weight: 500;
+  }
+
+  /* Dark theme AI message */
+  body:not(.light-theme) .msg.ai .msg-bubble {
+    background: #1e1e2a;
+    border-color: var(--accent);
+    color: #ffffff !important;
+  }
+
+  /* Light theme AI message - EXTRA VISIBLE */
+  body.light-theme .msg.ai .msg-bubble {
+    background: #f0f3ff !important;
+    border: 2px solid var(--accent);
+    color: #1a1f2e !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(108,99,255,0.25);
+  }
+
+  .msg-label { 
+    font-size: 10px; 
+    font-weight: 700; 
+    letter-spacing: 0.5px; 
+    color: var(--accent2); 
+    margin-bottom: 4px; 
+    text-transform: uppercase; 
+  }
+
+  .msg.user .msg-label { 
+    text-align: right; 
+    color: var(--accent);
+  }
+
+  /* Quick prompts - FIXED VISIBILITY */
+  .quick-prompts { 
+    padding: 12px 16px; 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 8px; 
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .quick-prompt {
+    font-size: 11px; 
+    padding: 8px 14px; 
+    border-radius: 20px;
+    background: var(--surface2); 
+    border: 1px solid var(--border);
+    color: var(--text) !important;
+    cursor: pointer; 
+    transition: all 0.2s; 
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .quick-prompt:hover { 
+    border-color: var(--accent); 
+    color: var(--accent) !important; 
+    background: var(--surface2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108,99,255,0.2);
+  }
+
+  /* Dark theme quick prompts */
+  body:not(.light-theme) .quick-prompt {
+    background: #252530;
+    border-color: #3a3a4a;
+    color: #e8e8f0 !important;
+  }
+
+  /* Light theme quick prompts - EXTRA VISIBLE */
+  body.light-theme .quick-prompt {
+    background: #eef2f9 !important;
+    border: 1px solid var(--accent);
+    color: #1a1f2e !important;
+    font-weight: 600;
+  }
+
+  /* Chat input area */
+  .chat-input-area {
+    padding: 16px; 
+    border-top: 1px solid var(--border);
+    display: flex; 
+    gap: 8px; 
+    align-items: flex-end;
+    background: var(--surface);
+  }
+
+  .chat-input {
+    flex: 1; 
+    background: var(--surface2); 
+    border: 1px solid var(--border);
+    border-radius: 12px; 
+    padding: 12px 16px; 
+    color: var(--text) !important;
+    font-family: 'Syne', sans-serif; 
+    font-size: 13px; 
+    outline: none;
+    resize: none; 
+    max-height: 100px; 
+    transition: all 0.2s;
+    line-height: 1.5;
+  }
+
+  .chat-input:focus { 
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(108,99,255,0.2);
+  }
+
+  .chat-input::placeholder { 
+    color: var(--muted); 
+    opacity: 0.8;
+  }
+
+  /* Dark theme chat input */
+  body:not(.light-theme) .chat-input {
+    background: #252530;
+    border-color: #3a3a4a;
+    color: #f0f0ff !important;
+  }
+
+  /* Light theme chat input - EXTRA VISIBLE */
+  body.light-theme .chat-input {
+    background: #ffffff !important;
+    border: 1px solid var(--accent);
+    color: #1a1f2e !important;
+    font-weight: 500;
+  }
+
+  body.light-theme .chat-input::placeholder {
+    color: #6f7a8c;
+  }
+
+  .send-btn {
+    width: 42px; 
+    height: 42px; 
+    border-radius: 12px; 
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    color: white; 
+    font-size: 18px; 
+    transition: all 0.2s;
+  }
+
+  .send-btn:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 4px 12px rgba(108,99,255,0.4); 
+  }
+
+  /* Welcome message - HIGHLY VISIBLE */
+  .msg.ai:first-child .msg-bubble {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border-left: 4px solid var(--accent2);
+    border-top: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    color: var(--text) !important;
+    font-weight: 500;
+  }
+
+  /* Dark theme welcome message */
+  body:not(.light-theme) .msg.ai:first-child .msg-bubble {
+    background: linear-gradient(135deg, #252530, #1a1a24);
+    color: #ffffff !important;
+  }
+
+  /* Light theme welcome message - EXTRA VISIBLE */
+  body.light-theme .msg.ai:first-child .msg-bubble {
+    background: linear-gradient(135deg, #f5f8ff, #ffffff) !important;
+    border: 2px solid var(--accent2) !important;
+    border-left: 6px solid var(--accent2) !important;
+    color: #1a1f2e !important;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,212,170,0.25);
+  }
+
+  /* Thinking state indicator */
+  .msg.ai .msg-bubble .spin {
+    color: var(--accent2);
+    margin-right: 8px;
+    display: inline-block;
+    font-size: 14px;
+  }
+
+  /* ANALYTICS PANEL */
+  .analytics-panel {
+    width: 380px; flex-shrink: 0;
+    background: var(--surface); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .analytics-section {
+    padding: 20px; border-bottom: 1px solid var(--border);
+  }
+  .chart-container {
+    height: 200px; margin: 20px 0; position: relative;
+  }
+  .metric-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .metric-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .metric-value {
+    font-size: 24px; font-weight: 800; color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .metric-label {
+    font-size: 10px; color: var(--muted); text-transform: uppercase;
+  }
+  .velocity-list {
+    margin-top: 12px;
+  }
+  .velocity-item {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    color: var(--text);
+  }
+  .velocity-bar {
+    height: 6px; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px; transition: width 0.3s;
+  }
+
+  /* CONFIG MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; opacity: 0;
+    pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; width: 600px; max-height: 85vh;
+    overflow-y: auto; transform: translateY(20px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  
+  .integration-tabs {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .integration-tab {
+    padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .integration-tab:hover { color: var(--text); }
+  .integration-tab.active {
+    background: var(--surface2); color: var(--accent);
+  }
+  
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.8px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center;
+    gap: 6px;
+  }
+  .form-input {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+  
+  .checkbox-group {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 16px; height: 16px; cursor: pointer;
+  }
+  .checkbox-group label { color: var(--text); }
+  
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+  
+  .btn-primary {
+    flex: 1; padding: 11px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; color: white; font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(108,99,255,0.4); }
+  
+  .btn-secondary {
+    padding: 11px 20px; border-radius: 8px; border: 1px solid var(--border);
+    background: none; color: var(--muted); font-family: 'Syne', sans-serif;
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+
+  /* TASK DETAIL MODAL */
+  .task-detail-modal {
+    width: 600px; max-width: 90vw;
+  }
+  
+  .email-thread {
+    margin: 16px 0; border-left: 2px solid var(--border); padding-left: 16px;
+  }
+  .email-message {
+    margin-bottom: 16px; padding: 12px; background: var(--surface2); border-radius: 8px;
+  }
+  .email-header {
+    display: flex; justify-content: space-between; margin-bottom: 8px;
+    font-size: 11px; color: var(--muted);
+  }
+  .email-from { font-weight: 600; color: var(--text); }
+  .email-subject { font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  .email-body { font-size: 12px; line-height: 1.5; color: var(--text); }
+  
+  .comment-section {
+    margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px;
+  }
+  .comment {
+    display: flex; gap: 12px; margin-bottom: 16px;
+  }
+  .comment-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    color: white;
+  }
+  .comment-content {
+    flex: 1;
+  }
+  .comment-header {
+    display: flex; gap: 8px; margin-bottom: 4px;
+  }
+  .comment-author {
+    font-size: 12px; font-weight: 600;
+    color: var(--text);
+  }
+  .comment-time {
+    font-size: 10px; color: var(--muted);
+  }
+  .comment-text {
+    font-size: 12px; color: var(--text);
+  }
+  .comment-input {
+    display: flex; gap: 8px; margin-top: 16px;
+  }
+  .comment-input textarea {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: 12px; resize: none;
+    outline: none;
+  }
+  .comment-input textarea::placeholder { color: var(--muted); }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex; gap: 1px; padding: 12px 24px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .stat-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px;
+    border-radius: 8px; transition: background 0.2s; cursor: default;
+  }
+  .stat-item:hover { background: var(--surface2); }
+  .stat-num { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; }
+
+  .empty-state {
+    grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .empty-sub { font-size: 13px; color: var(--muted); }
+
+  /* TOAST */
+  .toast-container { 
+    position: fixed; 
+    bottom: 24px; 
+    right: 24px; 
+    z-index: 2000; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+  }
+  .toast {
+    padding: 12px 18px; 
+    border-radius: 10px; 
+    font-size: 13px; 
+    font-weight: 600;
+    background: var(--surface); 
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4); 
+    min-width: 240px;
+    animation: slideIn 0.3s ease; 
+    color: var(--text);
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+  .toast.success { border-color: var(--accent2); }
+  .toast.error { border-color: var(--danger); }
+  .toast.info { border-color: var(--accent); }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Connection Status */
+  .connection-status {
+    display: flex; align-items: center; gap: 6px; font-size: 10px;
+    padding: 4px 8px; border-radius: 4px; background: var(--surface2);
+    margin-left: 12px;
+    color: var(--text);
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent2);
+  }
+  .status-dot.offline { background: var(--danger); }
+</style>
 </head>
 <body>
+
 <header>
-  <div class="logo">UnifyAI <span>Pro</span></div>
-  <div class="mobile-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+  <div class="logo">Evron<span>ai</span></div>
+  <div class="connection-status" id="connection-status">
+    <span class="status-dot offline" id="status-dot"></span>
+    <span id="status-text">Offline</span>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle" title="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
   <nav>
-    <button class="nav-btn active" onclick="showDashboard()">Dashboard</button>
+    <button class="nav-btn active" onclick="switchView('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="switchView('analytics')">📊 Analytics</button>
     <button class="nav-btn" onclick="openConfig()">⚙ Config</button>
   </nav>
-  <div class="theme-toggle">
-    <button class="active" onclick="setTheme('dark', event)"><i class="fas fa-moon"></i></button>
-    <button onclick="setTheme('light', event)"><i class="fas fa-sun"></i></button>
-  </div>
 </header>
 
 <div class="app">
-  <aside class="sidebar" id="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
     <div class="ai-badge">
-      <div><div class="ai-pulse"></div></div>
-      <div><div class="ai-badge-text">DeepSeek AI Controller</div><div class="ai-badge-sub" id="ai-source-status">Full Trello Control</div></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label"><span class="source-dot connected" style="background: var(--accent);"></span> Connected Sources</div>
-      <div class="source-card active" onclick="filterSource('all')">
-        <div class="source-dot" style="background: var(--accent);"></div>
-        <span class="source-card-name">All Items</span>
-        <span class="source-card-count" id="count-all">0</span>
+      <div>
+        <div class="ai-pulse"></div>
       </div>
-      <div class="source-card" onclick="filterSource('trello')">
-        <div class="source-dot" style="background: var(--trello);" id="trello-dot"></div>
-        <span class="source-card-name">Trello</span>
-        <span class="source-card-count" id="count-trello">0</span>
-        <div class="source-actions">
-          <button class="action-btn" onclick="showCreateModal('trello', event)"><i class="fas fa-plus"></i></button>
-          <button class="action-btn" onclick="refreshTrelloBoards(event)"><i class="fas fa-sync-alt"></i></button>
-        </div>
-      </div>
-      <div class="source-card" onclick="filterSource('jira')">
-        <div class="source-dot connected" style="background: var(--jira);" id="jira-dot"></div>
-        <span class="source-card-name">Jira</span>
-        <span class="source-card-count" id="count-jira">0</span>
-        <div class="source-actions">
-          <button class="action-btn" onclick="showCreateModal('jira', event)"><i class="fas fa-plus"></i></button>
-        </div>
-      </div>
-      <div class="source-card" onclick="filterSource('slack')">
-        <div class="source-dot connected" style="background: var(--slack);" id="slack-dot"></div>
-        <span class="source-card-name">Slack</span>
-        <span class="source-card-count" id="count-slack">0</span>
-        <div class="source-actions">
-          <button class="action-btn" onclick="showCreateModal('slack', event)"><i class="fas fa-plus"></i></button>
-        </div>
-      </div>
-      <div class="source-card" onclick="filterSource('gmail')">
-        <div class="source-dot connected" style="background: var(--gmail);" id="gmail-dot"></div>
-        <span class="source-card-name">Gmail</span>
-        <span class="source-card-count" id="count-gmail">0</span>
-        <div class="source-actions">
-          <button class="action-btn" onclick="showCreateModal('gmail', event)"><i class="fas fa-plus"></i></button>
-        </div>
-      </div>
-      <div class="source-card" onclick="filterSource('deepseek')">
-        <div class="source-dot" style="background: var(--deepseek);" id="deepseek-dot"></div>
-        <span class="source-card-name">DeepSeek AI</span>
-        <span class="source-card-count" id="count-deepseek">0</span>
-        <div class="source-actions">
-          <button class="action-btn" onclick="showCreateModal('deepseek', event)"><i class="fas fa-plus"></i></button>
-        </div>
+      <div>
+        <div class="ai-badge-text">DeepSeek AI Active</div>
+        <div class="ai-badge-sub">deepseek-chat model</div>
       </div>
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Priority</div>
+      <div class="sidebar-label">
+        <i class="fas fa-database"></i> Sources
+      </div>
+      <div class="source-card active" onclick="filterSource('all')">
+        <div class="source-dot" style="background: var(--accent)"></div>
+        <span class="source-card-name">All Tasks</span>
+        <span class="source-card-count" id="count-all">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('gmail')">
+        <div class="source-dot" style="background: var(--gmail)"></div>
+        <span class="source-card-name">Gmail</span>
+        <span class="source-card-count" id="count-gmail">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('outlook')">
+        <div class="source-dot" style="background: var(--outlook)"></div>
+        <span class="source-card-name">Outlook</span>
+        <span class="source-card-count" id="count-outlook">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('trello')">
+        <div class="source-dot" style="background: var(--trello)"></div>
+        <span class="source-card-name">Trello</span>
+        <span class="source-card-count" id="count-trello">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('jira')">
+        <div class="source-dot" style="background: var(--jira)"></div>
+        <span class="source-card-name">Jira</span>
+        <span class="source-card-count" id="count-jira">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('asana')">
+        <div class="source-dot" style="background: var(--asana)"></div>
+        <span class="source-card-name">Asana</span>
+        <span class="source-card-count" id="count-asana">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('monday')">
+        <div class="source-dot" style="background: var(--monday)"></div>
+        <span class="source-card-name">Monday.com</span>
+        <span class="source-card-count" id="count-monday">0</span>
+      </div>
+      <div class="source-card" onclick="filterSource('gitlab')">
+        <div class="source-dot" style="background: var(--gitlab)"></div>
+        <span class="source-card-name">GitLab</span>
+        <span class="source-card-count" id="count-gitlab">0</span>
+      </div>
+      <button class="connect-btn" onclick="openConfig()">
+        <i class="fas fa-plus"></i> Connect Source
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">
+        <i class="fas fa-envelope"></i> Email Folders
+      </div>
+      <div class="source-card" onclick="filterEmailFolder('inbox')">
+        <i class="fas fa-inbox"></i>
+        <span class="source-card-name">Inbox</span>
+        <span class="source-card-count" id="count-inbox">0</span>
+      </div>
+      <div class="source-card" onclick="filterEmailFolder('sent')">
+        <i class="fas fa-paper-plane"></i>
+        <span class="source-card-name">Sent</span>
+        <span class="source-card-count" id="count-sent">0</span>
+      </div>
+      <div class="source-card" onclick="filterEmailFolder('drafts')">
+        <i class="fas fa-pen"></i>
+        <span class="source-card-name">Drafts</span>
+        <span class="source-card-count" id="count-drafts">0</span>
+      </div>
+      <div class="source-card" onclick="filterEmailFolder('spam')">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span class="source-card-name">Spam</span>
+        <span class="source-card-count" id="count-spam">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">
+        <i class="fas fa-flag"></i> Priority
+      </div>
       <div class="source-card" onclick="filterPriority('high')">
-        <div class="source-dot" style="background: var(--danger);"></div>
+        <div class="source-dot" style="background: var(--danger)"></div>
         <span class="source-card-name">High Priority</span>
         <span class="source-card-count" id="count-high">0</span>
       </div>
       <div class="source-card" onclick="filterPriority('medium')">
-        <div class="source-dot" style="background: var(--warn);"></div>
+        <div class="source-dot" style="background: var(--warn)"></div>
         <span class="source-card-name">Medium</span>
         <span class="source-card-count" id="count-medium">0</span>
       </div>
       <div class="source-card" onclick="filterPriority('low')">
-        <div class="source-dot" style="background: var(--accent2);"></div>
+        <div class="source-dot" style="background: var(--accent2)"></div>
         <span class="source-card-name">Low</span>
         <span class="source-card-count" id="count-low">0</span>
       </div>
     </div>
-    
-    <div style="padding: 16px;">
-      <button class="connect-btn" onclick="openConfig()"><i class="fas fa-plug"></i> Manage Connections</button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">
+        <i class="fas fa-users"></i> Team
+      </div>
+      <div class="source-card" onclick="filterAssignee('me')">
+        <i class="fas fa-user"></i>
+        <span class="source-card-name">Assigned to me</span>
+        <span class="source-card-count" id="count-me">0</span>
+      </div>
+      <div class="source-card" onclick="filterUnassigned()">
+        <i class="fas fa-user-slash"></i>
+        <span class="source-card-name">Unassigned</span>
+        <span class="source-card-count" id="count-unassigned">0</span>
+      </div>
     </div>
   </aside>
 
+  <!-- MAIN -->
   <div class="main">
+    <!-- STATS -->
     <div class="stats-bar">
-      <div class="stat-item"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
-      <div class="stat-item"><div class="stat-num" id="stat-inprogress">0</div><div class="stat-label">In Progress</div></div>
-      <div class="stat-item"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Done</div></div>
-      <div class="stat-item"><div class="stat-num" id="stat-overdue">0</div><div class="stat-label">Overdue</div></div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-total" style="color: var(--accent)">0</div>
+        <div class="stat-label">Total Tasks</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-inprogress" style="color: var(--warn)">0</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-done" style="color: var(--accent2)">0</div>
+        <div class="stat-label">Done</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-overdue" style="color: var(--danger)">0</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-unread" style="color: var(--gmail)">0</div>
+        <div class="stat-label">Unread Emails</div>
+      </div>
     </div>
+
+    <!-- TOOLBAR -->
     <div class="toolbar">
-      <div class="search-box"><span class="search-icon">⌕</span><input type="text" placeholder="Search all items..." id="search-input" oninput="filterItems()"></div>
-      <div class="view-toggle">
-        <button class="view-btn active" onclick="setView('grid', event)"><i class="fas fa-th"></i></button>
-        <button class="view-btn" onclick="setView('calendar', event)"><i class="fas fa-calendar"></i></button>
-        <button class="view-btn" onclick="setView('gantt', event)"><i class="fas fa-chart-bar"></i></button>
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Search tasks and emails..." oninput="searchTasks(this.value)" id="search-input">
       </div>
       <div class="filter-group">
         <button class="filter-btn active" onclick="filterStatus('all', this)">All</button>
         <button class="filter-btn" onclick="filterStatus('todo', this)">To Do</button>
-        <button class="filter-btn" onclick="filterStatus('in_progress', this)">Doing</button>
+        <button class="filter-btn" onclick="filterStatus('in_progress', this)">In Progress</button>
         <button class="filter-btn" onclick="filterStatus('done', this)">Done</button>
       </div>
-      <div class="export-menu">
-        <button class="sync-btn secondary"><i class="fas fa-download"></i> Export</button>
-        <div class="export-dropdown">
-          <div class="export-item" onclick="exportData('csv')">CSV</div>
-          <div class="export-item" onclick="exportData('json')">JSON</div>
-          <div class="export-item" onclick="exportPDF()">PDF Report</div>
-        </div>
+      <div class="action-group">
+        <button class="action-btn" onclick="exportData('csv')">
+          <i class="fas fa-download"></i> CSV
+        </button>
+        <button class="action-btn" onclick="exportData('pdf')">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button class="action-btn" onclick="shareView()">
+          <i class="fas fa-share-alt"></i> Share
+        </button>
       </div>
-      <button class="sync-btn" onclick="syncAll()" id="sync-btn"><i class="fas fa-sync-alt" id="sync-icon"></i> Sync All</button>
+      <button class="sync-btn" onclick="syncAll()" id="sync-btn">
+        <span id="sync-icon">⟳</span> Sync All
+      </button>
     </div>
-    <div class="content-area" id="content-area"></div>
+
+    <!-- TASKS HEADER -->
+    <div class="tasks-header">
+      <div class="view-toggle">
+        <button class="active" onclick="toggleView('grid')" id="view-grid">
+          <i class="fas fa-th"></i> Grid
+        </button>
+        <button onclick="toggleView('kanban')" id="view-kanban">
+          <i class="fas fa-columns"></i> Kanban
+        </button>
+      </div>
+      <div>
+        <span class="source-card-count" id="filtered-count">0</span> items
+      </div>
+    </div>
+
+    <!-- TASKS AREA (Grid View by default) -->
+    <div class="tasks-area" id="tasks-area">
+      <div class="tasks-grid" id="tasks-grid"></div>
+    </div>
   </div>
 
+  <!-- AI PANEL - FIXED VISIBILITY -->
   <div class="ai-panel" id="ai-panel">
     <div class="panel-header">
-      <div><div class="panel-title">DeepSeek AI Controller</div><div class="panel-subtitle" id="deepseek-status">Full Trello Control</div></div>
-      <div class="deepseek-badge" onclick="showDeepSeekActions()"><i class="fas fa-robot"></i> AI Actions</div>
+      <div>
+        <div class="panel-title">AI Assistant</div>
+        <div class="panel-subtitle">Powered by DeepSeek</div>
+      </div>
+      <div class="deepseek-badge">deepseek-chat</div>
     </div>
     <div class="chat-area" id="chat-area">
-      <div class="msg ai"><div class="msg-bubble">🤖 **DeepSeek AI - Full Trello Control**<br><br>I can manage your Trello boards with natural language:<br><br>**Create Cards:**<br>• "Create a new high priority task called 'Fix login bug'"<br>• "Add a card to the Marketing board: Q3 campaign planning"<br><br>**Update Cards:**<br>• "Update the due date on 'Design review' to next Friday"<br>• "Change priority of 'API integration' to high"<br>• "Move 'User testing' to the Done list"<br><br>**Delete Cards:**<br>• "Delete the card called 'Old task'"<br>• "Remove the completed 'Weekly sync' card"<br><br>**Manage Boards:**<br>• "Show me all cards in the Development board"<br>• "What tasks are overdue in Marketing?"<br>• "List all high priority items across all boards"<br><br>Try any of these commands!</div></div>
+      <div class="msg ai">
+        <div class="msg-label">🤖 EVRON AI</div>
+        <div class="msg-bubble">
+          <span style="color: var(--accent2); font-weight: 700;">Hello! I'm your Evron AI assistant.</span><br><br>
+          • 📧 Convert emails to tasks automatically<br>
+          • ✍️ Draft email replies from tasks<br>
+          • 🔍 Find important emails needing follow-up<br>
+          • 💬 Track email threads as conversations<br>
+          • 🎯 Detect action items in emails<br><br>
+          <span style="color: var(--accent); font-weight: 700; background: rgba(108,99,255,0.1); padding: 4px 8px; border-radius: 4px;">
+            ✨ Try asking: "Show me emails that need replies"
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="quick-prompts">
-      <button class="quick-prompt" onclick="sendQuickPrompt('Create a new high priority task called \"Review Q3 budget\" in the Development board')">➕ Create Card</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Update the due date on the \"Design system\" card to next Monday')">📅 Update Due</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Move the \"User testing\" card to the Done list')">➡️ Move Card</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Delete the card called \"Old task\"')">🗑️ Delete Card</button>
-      <button class="quick-prompt" onclick="sendQuickPrompt('Show me all high priority cards')">🔍 Show High</button>
+    <div class="quick-prompts" id="quick-prompts">
+      <button class="quick-prompt" onclick="sendQuickPrompt(this)">📧 Emails needing reply</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt(this)">📊 Burndown chart</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt(this)">⚡ Team velocity</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt(this)">🎯 Blockers</button>
+      <button class="quick-prompt" onclick="sendQuickPrompt(this)">📋 Standup report</button>
     </div>
     <div class="chat-input-area">
-      <textarea class="chat-input" id="chat-input" placeholder="Ask DeepSeek to manage Trello..." rows="1"></textarea>
+      <textarea class="chat-input" id="chat-input" placeholder="Ask Evron AI about your tasks and emails..." rows="1"
+        onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
       <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
   </div>
 </div>
 
-<!-- Configuration Modal -->
-<div class="modal-overlay" id="config-modal" style="display: none;">
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
   <div class="modal">
-    <h2 style="margin-bottom: 20px;"><i class="fas fa-plug"></i> API Configuration</h2>
-    
-    <div class="tab-container">
-      <div class="tab active" onclick="switchConfigTab('trello')">Trello</div>
-      <div class="tab" onclick="switchConfigTab('deepseek')">DeepSeek AI</div>
-      <div class="tab" onclick="switchConfigTab('other')">Other</div>
-    </div>
-    
-    <!-- Trello Config -->
-    <div id="config-trello" class="config-section">
-      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
-        <p style="margin-bottom: 16px;">Your Trello API key is: <code style="background: var(--surface); padding: 4px 8px; border-radius: 4px;">223cdeaf54b7f1b742389ef7784de5ef</code></p>
-        
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Trello Token</label>
-          <input type="text" id="trello-token-input" class="token-input" placeholder="Paste your Trello token (ATT...)" value="">
-          <button class="sync-btn" style="width: 100%;" onclick="saveTrelloToken()">Validate & Save Token</button>
-        </div>
-        
-        <div style="margin-top: 16px;">
-          <p style="color: var(--muted); font-size: 12px;">Don't have a token? <a href="https://trello.com/1/authorize?expiration=never&name=UnifyAI&scope=read,write&response_type=token&key=223cdeaf54b7f1b742389ef7784de5ef" target="_blank" style="color: var(--accent);">Generate one here</a></p>
-        </div>
-        
-        <div id="trello-connection-status" style="margin-top: 16px; padding: 12px; border-radius: 6px; display: none;"></div>
+    <div class="modal-title">Configure Sources</div>
+    <div class="modal-sub">Add your API credentials to connect task sources and enable real-time sync.</div>
+
+    <div class="integration-tabs">
+      <div class="integration-tab active" onclick="switchIntegrationTab('deepseek')">
+        <i class="fas fa-brain"></i> DeepSeek
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('gmail')">
+        <i class="fab fa-google"></i> Gmail
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('outlook')">
+        <i class="fab fa-microsoft"></i> Outlook
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('trello')">
+        <i class="fab fa-trello"></i> Trello
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('jira')">
+        <i class="fab fa-jira"></i> Jira
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('asana')">
+        <i class="fab fa-asana"></i> Asana
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('monday')">
+        <i class="fas fa-calendar"></i> Monday
+      </div>
+      <div class="integration-tab" onclick="switchIntegrationTab('gitlab')">
+        <i class="fab fa-gitlab"></i> GitLab
       </div>
     </div>
-    
-    <!-- DeepSeek Config -->
-    <div id="config-deepseek" class="config-section" style="display: none;">
-      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
-        <h3 style="margin-bottom: 16px;">DeepSeek AI Configuration</h3>
-        
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">DeepSeek API Key</label>
-          <input type="password" id="deepseek-api-key" class="token-input" placeholder="sk-..." value="">
-          <p style="color: var(--muted); font-size: 11px; margin-top: 4px;">Get your API key from <a href="https://platform.deepseek.com/" target="_blank" style="color: var(--accent);">DeepSeek Platform</a></p>
-        </div>
-        
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">API Endpoint (optional)</label>
-          <input type="text" id="deepseek-endpoint" class="token-input" placeholder="https://api.deepseek.com/v1/chat/completions" value="https://api.deepseek.com/v1/chat/completions">
-        </div>
-        
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Model</label>
-          <select id="deepseek-model" class="board-selector">
-            <option value="deepseek-chat">deepseek-chat</option>
-            <option value="deepseek-coder">deepseek-coder</option>
-            <option value="deepseek-chat-v2.5">deepseek-chat-v2.5</option>
-          </select>
-        </div>
-        
-        <div style="display: flex; gap: 8px;">
-          <button class="sync-btn" style="flex: 1;" onclick="testDeepSeekConnection()">Test Connection</button>
-          <button class="sync-btn" style="flex: 1;" onclick="saveDeepSeekConfig()">Save Configuration</button>
-        </div>
-        
-        <div id="deepseek-test-result" style="margin-top: 16px; padding: 12px; border-radius: 6px; display: none;"></div>
+
+    <!-- DeepSeek Tab -->
+    <div id="tab-deepseek" class="tab-content active">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> DeepSeek API Key</label>
+        <input type="password" class="form-input" id="deepseek-key" placeholder="sk-..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-globe"></i> API Endpoint</label>
+        <input type="text" class="form-input" id="deepseek-endpoint" value="https://api.deepseek.com/v1" />
       </div>
     </div>
-    
-    <!-- Other Sources Config -->
-    <div id="config-other" class="config-section" style="display: none;">
-      <div style="background: var(--surface2); padding: 20px; border-radius: 12px; margin: 20px 0;">
-        <p style="color: var(--muted);">Other integrations are in demo mode with sample data.</p>
+
+    <!-- Gmail Tab -->
+    <div id="tab-gmail" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fab fa-google"></i> OAuth 2.0 Client ID</label>
+        <input type="text" class="form-input" id="gmail-client-id" placeholder="Your Google OAuth Client ID" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> Client Secret</label>
+        <input type="password" class="form-input" id="gmail-client-secret" placeholder="Your Client Secret" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-envelope"></i> Email Address</label>
+        <input type="email" class="form-input" id="gmail-email" placeholder="your.email@gmail.com" />
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="gmail-realtime" checked>
+        <label>Enable real-time sync (push notifications)</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="gmail-auto-task" checked>
+        <label>Auto-convert important emails to tasks</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="gmail-track-replies">
+        <label>Track reply status (follow-ups)</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-filter"></i> Label Filter</label>
+        <input type="text" class="form-input" id="gmail-labels" placeholder="INBOX,IMPORTANT,UNREAD (comma-separated)" />
       </div>
     </div>
-    
-    <div style="display: flex; gap: 12px; margin-top: 20px;">
-      <button class="sync-btn secondary" onclick="closeConfig()" style="flex: 1;">Close</button>
+
+    <!-- Outlook Tab -->
+    <div id="tab-outlook" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fab fa-microsoft"></i> Application ID</label>
+        <input type="text" class="form-input" id="outlook-app-id" placeholder="Your Microsoft App ID" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> Client Secret</label>
+        <input type="password" class="form-input" id="outlook-client-secret" placeholder="Your Client Secret" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-envelope"></i> Email Address</label>
+        <input type="email" class="form-input" id="outlook-email" placeholder="you@outlook.com" />
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="outlook-realtime" checked>
+        <label>Enable real-time sync</label>
+      </div>
+    </div>
+
+    <!-- Trello Tab -->
+    <div id="tab-trello" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> API Key</label>
+        <input type="text" class="form-input" id="trello-api-key" placeholder="Your Trello API Key" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-lock"></i> Token</label>
+        <input type="password" class="form-input" id="trello-token" placeholder="Your Trello Token" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-id-card"></i> Board ID (optional)</label>
+        <input type="text" class="form-input" id="trello-board-id" placeholder="Leave blank to fetch all boards" />
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="trello-realtime" checked>
+        <label>Enable real-time sync</label>
+      </div>
+    </div>
+
+    <!-- Jira Tab -->
+    <div id="tab-jira" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-globe"></i> Domain</label>
+        <input type="text" class="form-input" id="jira-domain" placeholder="yourcompany.atlassian.net" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+        <input type="text" class="form-input" id="jira-email" placeholder="you@company.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> API Token</label>
+        <input type="password" class="form-input" id="jira-token" placeholder="Your Jira API Token" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-filter"></i> JQL Filter</label>
+        <input type="text" class="form-input" id="jira-jql" placeholder="project = MYPROJECT AND status != Done" />
+      </div>
+    </div>
+
+    <!-- Asana Tab -->
+    <div id="tab-asana" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> Personal Access Token</label>
+        <input type="password" class="form-input" id="asana-token" placeholder="1/1234567890..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-id-card"></i> Workspace ID</label>
+        <input type="text" class="form-input" id="asana-workspace" placeholder="Optional" />
+      </div>
+    </div>
+
+    <!-- Monday.com Tab -->
+    <div id="tab-monday" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> API Token</label>
+        <input type="password" class="form-input" id="monday-token" placeholder="Your Monday.com API Token" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-id-card"></i> Board ID</label>
+        <input type="text" class="form-input" id="monday-board" placeholder="Optional" />
+      </div>
+    </div>
+
+    <!-- GitLab Tab -->
+    <div id="tab-gitlab" class="tab-content">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> Personal Access Token</label>
+        <input type="password" class="form-input" id="gitlab-token" placeholder="glpat-..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-globe"></i> GitLab URL</label>
+        <input type="text" class="form-input" id="gitlab-url" value="https://gitlab.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-id-card"></i> Project ID</label>
+        <input type="text" class="form-input" id="gitlab-project" placeholder="Optional" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeConfig()">Cancel</button>
+      <button class="btn-primary" onclick="saveConfig()">Save & Connect</button>
     </div>
   </div>
 </div>
 
-<!-- Universal Create Modal -->
-<div class="modal-overlay" id="create-modal" style="display: none;">
-  <div class="modal">
-    <h2 style="margin-bottom: 20px;" id="modal-title">Create New Item</h2>
+<!-- TASK DETAIL MODAL -->
+<div class="modal-overlay" id="task-modal" onclick="closeTaskModalOutside(event)">
+  <div class="modal task-detail-modal">
+    <div class="modal-title" id="task-modal-title">Task Details</div>
+    <div class="modal-sub" id="task-modal-id"></div>
     
-    <div class="tab-container" id="source-tabs">
-      <div class="tab active" onclick="switchSourceTab('trello')">Trello</div>
-      <div class="tab" onclick="switchSourceTab('jira')">Jira</div>
-      <div class="tab" onclick="switchSourceTab('slack')">Slack</div>
-      <div class="tab" onclick="switchSourceTab('gmail')">Gmail</div>
-      <div class="tab" onclick="switchSourceTab('deepseek')">DeepSeek</div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-input" id="task-status" onchange="updateTaskStatus(this.value)">
+        <option value="todo">To Do</option>
+        <option value="in_progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
     </div>
-    
-    <!-- Trello Form -->
-    <div id="trello-form" class="source-form">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Board</label>
-        <select id="trello-board" class="board-selector" onchange="loadTrelloLists()">
-          <option value="">Loading boards...</option>
-        </select>
-        <div id="trello-board-status" style="font-size: 11px; color: var(--muted); margin-top: 4px;"></div>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">List</label>
-        <select id="trello-list" class="board-selector">
-          <option value="">Select a board first</option>
-        </select>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Card Title</label>
-        <input type="text" id="trello-title" placeholder="Enter card title" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Description</label>
-        <textarea id="trello-desc" placeholder="Enter description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-        <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Due Date</label>
-          <input type="date" id="trello-due" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
-        <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority (as label)</label>
-          <input type="text" id="trello-priority-label" placeholder="e.g., High, Medium, Low" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
-      </div>
+
+    <div class="form-group">
+      <label class="form-label">Priority</label>
+      <select class="form-input" id="task-priority" onchange="updateTaskPriority(this.value)">
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
     </div>
-    
-    <!-- Jira Form -->
-    <div id="jira-form" class="source-form" style="display: none;">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Project Key</label>
-        <input type="text" id="jira-project" placeholder="e.g., PROJ" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Issue Type</label>
-        <select id="jira-type" class="board-selector" style="padding: 10px;">
-          <option value="Task">Task</option>
-          <option value="Bug">Bug</option>
-          <option value="Story">Story</option>
-          <option value="Epic">Epic</option>
-        </select>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Summary</label>
-        <input type="text" id="jira-summary" placeholder="Issue summary" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Description</label>
-        <textarea id="jira-description" placeholder="Issue description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-        <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority</label>
-          <select id="jira-priority" class="board-selector" style="padding: 10px;">
-            <option value="Low">Low</option>
-            <option value="Medium" selected>Medium</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
-        </div>
-        <div>
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Assignee</label>
-          <input type="text" id="jira-assignee" placeholder="username" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
+
+    <div class="form-group">
+      <label class="form-label">Assignee</label>
+      <input type="text" class="form-input" id="task-assignee" onchange="updateTaskAssignee(this.value)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Due Date</label>
+      <input type="date" class="form-input" id="task-due" onchange="updateTaskDue(this.value)">
+    </div>
+
+    <!-- Email Thread Section (shown for email tasks) -->
+    <div id="email-thread-section" style="display: none;">
+      <div class="form-label">Email Thread</div>
+      <div class="email-thread" id="email-thread"></div>
+      <button class="btn-secondary" onclick="replyToEmail()">
+        <i class="fas fa-reply"></i> Reply to Email
+      </button>
+      <button class="btn-secondary" onclick="convertToTask()">
+        <i class="fas fa-tasks"></i> Convert to Task
+      </button>
+    </div>
+
+    <div class="comment-section">
+      <div class="form-label">Comments</div>
+      <div id="task-comments"></div>
+      <div class="comment-input">
+        <textarea placeholder="Add a comment..." rows="2" id="new-comment"></textarea>
+        <button class="btn-primary" onclick="addComment()">Post</button>
       </div>
     </div>
-    
-    <!-- Slack Form -->
-    <div id="slack-form" class="source-form" style="display: none;">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Channel</label>
-        <input type="text" id="slack-channel" placeholder="#general or @username" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Message</label>
-        <textarea id="slack-message" placeholder="Your message" rows="4" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--muted);">
-          <input type="checkbox" id="slack-pin"> Pin message
-        </label>
-      </div>
-    </div>
-    
-    <!-- Gmail Form -->
-    <div id="gmail-form" class="source-form" style="display: none;">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">To</label>
-        <input type="email" id="gmail-to" placeholder="recipient@example.com" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Subject</label>
-        <input type="text" id="gmail-subject" placeholder="Email subject" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Body</label>
-        <textarea id="gmail-body" placeholder="Email content" rows="4" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-      </div>
-      <div style="margin-bottom: 16px;">
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--muted);">
-          <input type="checkbox" id="gmail-important"> Mark as important
-        </label>
-      </div>
-    </div>
-    
-    <!-- DeepSeek Form -->
-    <div id="deepseek-form" class="source-form" style="display: none;">
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--muted);">Command Type</label>
-        <select id="deepseek-command-type" class="board-selector" onchange="updateDeepSeekForm()">
-          <option value="create">Create Trello Card</option>
-          <option value="update">Update Trello Card</option>
-          <option value="delete">Delete Trello Card</option>
-          <option value="move">Move Trello Card</option>
-          <option value="analyze">Analyze Tasks</option>
-        </select>
-      </div>
-      
-      <div id="deepseek-create-fields">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Board</label>
-          <select id="deepseek-board" class="board-selector">
-            <option value="">Select board</option>
-          </select>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">List</label>
-          <select id="deepseek-list" class="board-selector">
-            <option value="">Select list</option>
-          </select>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Card Title</label>
-          <input type="text" id="deepseek-title" placeholder="Enter card title" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Description</label>
-          <textarea id="deepseek-desc" placeholder="Enter description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div>
-            <label style="display: block; margin-bottom: 8px; color: var(--muted);">Due Date</label>
-            <input type="date" id="deepseek-due" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-          </div>
-          <div>
-            <label style="display: block; margin-bottom: 8px; color: var(--muted);">Priority</label>
-            <select id="deepseek-priority" class="board-selector" style="padding: 10px;">
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <div id="deepseek-update-fields" style="display: none;">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Select Card to Update</label>
-          <select id="deepseek-card-select" class="board-selector">
-            <option value="">Loading cards...</option>
-          </select>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">New Title (leave blank to keep current)</label>
-          <input type="text" id="deepseek-new-title" placeholder="New title" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">New Description</label>
-          <textarea id="deepseek-new-desc" placeholder="New description" rows="3" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);"></textarea>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">New Due Date</label>
-          <input type="date" id="deepseek-new-due" style="width:100%; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text);">
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">New Priority</label>
-          <select id="deepseek-new-priority" class="board-selector">
-            <option value="">Keep current</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-      </div>
-      
-      <div id="deepseek-delete-fields" style="display: none;">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Select Card to Delete</label>
-          <select id="deepseek-delete-select" class="board-selector">
-            <option value="">Loading cards...</option>
-          </select>
-        </div>
-      </div>
-      
-      <div id="deepseek-move-fields" style="display: none;">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Select Card to Move</label>
-          <select id="deepseek-move-select" class="board-selector">
-            <option value="">Loading cards...</option>
-          </select>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Destination Board</label>
-          <select id="deepseek-dest-board" class="board-selector" onchange="loadDestinationLists()">
-            <option value="">Select board</option>
-          </select>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Destination List</label>
-          <select id="deepseek-dest-list" class="board-selector">
-            <option value="">Select list</option>
-          </select>
-        </div>
-      </div>
-      
-      <div id="deepseek-analyze-fields" style="display: none;">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 8px; color: var(--muted);">Analysis Type</label>
-          <select id="deepseek-analysis-type" class="board-selector">
-            <option value="overdue">Overdue Tasks</option>
-            <option value="high-priority">High Priority Tasks</option>
-            <option value="all">All Tasks Summary</option>
-            <option value="board-distribution">Board Distribution</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="deepseek-action-buttons">
-        <button class="deepseek-action-btn" onclick="executeDeepSeekCommand()"><i class="fas fa-play"></i> Execute</button>
-        <button class="deepseek-action-btn delete" onclick="closeCreateModal()"><i class="fas fa-times"></i> Cancel</button>
-      </div>
-    </div>
-    
-    <!-- Create Action Buttons -->
-    <div class="deepseek-action-buttons" id="create-action-buttons">
-      <button class="deepseek-action-btn" onclick="createItem()"><i class="fas fa-check"></i> Create</button>
-      <button class="deepseek-action-btn delete" onclick="closeCreateModal()"><i class="fas fa-times"></i> Cancel</button>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeTaskModal()">Close</button>
+      <button class="btn-primary" onclick="saveTaskChanges()">Save Changes</button>
     </div>
   </div>
 </div>
 
-<!-- Toast Container -->
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="share-modal" onclick="closeShareModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Share Dashboard View</div>
+    <div class="modal-sub">Create a shared link or export current view</div>
+    
+    <div class="form-group">
+      <label class="form-label">Share Link</label>
+      <input type="text" class="form-input" id="share-link" readonly>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Embed Code</label>
+      <textarea class="form-input" id="embed-code" rows="3" readonly></textarea>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeShareModal()">Close</button>
+      <button class="btn-primary" onclick="copyShareLink()">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div class="toast-container" id="toast-container"></div>
 
 <script>
-  // REAL TRELLO INTEGRATION
-  let tasks = [];
-  let currentView = 'grid';
-  let currentSource = 'all';
-  let currentPriority = 'all';
-  let currentStatus = 'all';
-  let searchQuery = '';
-  let calendar = null;
-  let trelloBoards = [];
-  let trelloToken = localStorage.getItem('trelloToken') || '';
-  const TRELLO_API_KEY = '223cdeaf54b7f1b742389ef7784de5ef';
-  let deepseekConfig = {
-    apiKey: localStorage.getItem('deepseekApiKey') || '',
-    endpoint: localStorage.getItem('deepseekEndpoint') || 'https://api.deepseek.com/v1/chat/completions',
-    model: localStorage.getItem('deepseekModel') || 'deepseek-chat'
+// ===================== THEME TOGGLE =====================
+function toggleTheme() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('theme-toggle');
+  const icon = toggleBtn.querySelector('i');
+  
+  body.classList.toggle('light-theme');
+  
+  if (body.classList.contains('light-theme')) {
+    icon.className = 'fas fa-sun';
+    localStorage.setItem('evronai-theme', 'light');
+  } else {
+    icon.className = 'fas fa-moon';
+    localStorage.setItem('evronai-theme', 'dark');
+  }
+  
+  // Force re-render of any charts if they exist
+  if (burndownChart) {
+    burndownChart.destroy();
+    renderAnalytics();
+  }
+}
+
+// Load saved theme
+function loadTheme() {
+  const savedTheme = localStorage.getItem('evronai-theme');
+  const body = document.body;
+  const toggleBtn = document.getElementById('theme-toggle');
+  const icon = toggleBtn.querySelector('i');
+  
+  if (savedTheme === 'light') {
+    body.classList.add('light-theme');
+    icon.className = 'fas fa-sun';
+  } else {
+    icon.className = 'fas fa-moon';
+  }
+}
+
+// ===================== STATE =====================
+let config = JSON.parse(localStorage.getItem('evronai-config') || '{}');
+let allTasks = [];
+let filteredTasks = [];
+let currentSourceFilter = 'all';
+let currentStatusFilter = 'all';
+let currentEmailFolder = 'all';
+let currentSearch = '';
+let chatHistory = [];
+let isSyncing = false;
+let currentView = 'grid';
+let currentTaskId = null;
+let comments = JSON.parse(localStorage.getItem('evronai-comments') || '{}');
+let webSocketConnections = {};
+let velocityData = [];
+let burndownChart = null;
+let currentUser = 'Current User';
+
+// ===================== GMAIL INTEGRATION =====================
+async function fetchGmail() {
+  const { gmailClientId, gmailClientSecret, gmailEmail, gmailLabels } = config;
+  if (!gmailEmail) return [];
+
+  try {
+    // Simulate Gmail API fetch (in production, use actual Gmail API with OAuth2)
+    const labels = gmailLabels ? gmailLabels.split(',').map(l => l.trim()) : ['INBOX', 'IMPORTANT'];
+    
+    // Mock Gmail messages
+    const mockEmails = [
+      {
+        id: 'gmail-msg-001',
+        threadId: 'thread-001',
+        from: 'client@company.com',
+        to: gmailEmail,
+        subject: 'Project Timeline Discussion',
+        body: 'Hi, I wanted to discuss the project timeline for Q2. We need to move up the launch date by 2 weeks. Can we schedule a call?',
+        date: '2026-03-15T10:30:00Z',
+        labels: ['INBOX', 'IMPORTANT'],
+        read: false,
+        hasAttachments: true,
+        attachments: ['timeline.pdf'],
+        priority: 'high'
+      },
+      {
+        id: 'gmail-msg-002',
+        threadId: 'thread-002',
+        from: 'team-lead@company.com',
+        to: gmailEmail,
+        subject: 'Sprint Review Feedback',
+        body: 'Great job on the sprint! A few action items from the review: 1) Update documentation 2) Fix the login bug 3) Schedule next sprint planning',
+        date: '2026-03-14T15:45:00Z',
+        labels: ['INBOX'],
+        read: true,
+        hasAttachments: false,
+        priority: 'medium'
+      },
+      {
+        id: 'gmail-msg-003',
+        threadId: 'thread-003',
+        from: 'support@customer.com',
+        to: gmailEmail,
+        subject: 'URGENT: System down for 2 hours',
+        body: 'Our production system has been down for 2 hours. This is critical. Please investigate immediately.',
+        date: '2026-03-16T09:15:00Z',
+        labels: ['INBOX', 'IMPORTANT', 'URGENT'],
+        read: false,
+        hasAttachments: false,
+        priority: 'high'
+      },
+      {
+        id: 'gmail-msg-004',
+        threadId: 'thread-004',
+        from: 'newsletter@tech.com',
+        to: gmailEmail,
+        subject: 'Weekly Tech Digest',
+        body: 'Here are this week\'s top stories in tech...',
+        date: '2026-03-13T08:00:00Z',
+        labels: ['INBOX'],
+        read: true,
+        hasAttachments: false,
+        priority: 'low'
+      },
+      {
+        id: 'gmail-msg-005',
+        threadId: 'thread-005',
+        from: 'hr@company.com',
+        to: gmailEmail,
+        subject: 'Action Required: Benefits Enrollment',
+        body: 'Open enrollment for benefits ends this Friday. Please complete your selections.',
+        date: '2026-03-12T14:20:00Z',
+        labels: ['INBOX', 'IMPORTANT'],
+        read: false,
+        hasAttachments: true,
+        attachments: ['benefits-guide.pdf'],
+        priority: 'medium'
+      }
+    ];
+
+    // Filter by labels if specified
+    let filteredEmails = mockEmails;
+    if (labels.length > 0 && !labels.includes('INBOX')) {
+      filteredEmails = mockEmails.filter(email => 
+        email.labels.some(l => labels.includes(l))
+      );
+    }
+
+    // Convert emails to task format
+    return filteredEmails.map(email => ({
+      id: email.id,
+      source: 'gmail',
+      type: 'email',
+      title: email.subject,
+      description: email.body,
+      status: email.read ? 'done' : 'in_progress', // Unread emails are "in progress"
+      priority: email.priority || 'medium',
+      assignee: email.to,
+      from: email.from,
+      to: email.to,
+      due_date: email.date.split('T')[0],
+      created_at: email.date,
+      labels: email.labels,
+      read: email.read,
+      hasAttachments: email.hasAttachments,
+      attachments: email.attachments || [],
+      threadId: email.threadId,
+      aiInsight: null,
+      needsReply: email.labels.includes('IMPORTANT') && !email.read,
+      emailData: email
+    }));
+  } catch (error) {
+    console.error('Gmail fetch error:', error);
+    return [];
+  }
+}
+
+// ===================== OUTLOOK INTEGRATION =====================
+async function fetchOutlook() {
+  const { outlookAppId, outlookEmail } = config;
+  if (!outlookEmail) return [];
+
+  try {
+    // Mock Outlook messages (similar structure to Gmail)
+    const mockEmails = [
+      {
+        id: 'outlook-msg-001',
+        from: 'manager@company.com',
+        subject: 'Weekly Team Meeting Notes',
+        body: 'Here are the notes from today\'s team meeting...',
+        date: '2026-03-15T14:00:00Z',
+        read: true,
+        priority: 'medium'
+      },
+      {
+        id: 'outlook-msg-002',
+        from: 'client@partner.com',
+        subject: 'Contract Review',
+        body: 'Please review the attached contract and let me know your thoughts.',
+        date: '2026-03-16T10:00:00Z',
+        read: false,
+        priority: 'high'
+      }
+    ];
+
+    return mockEmails.map(email => ({
+      id: email.id,
+      source: 'outlook',
+      type: 'email',
+      title: email.subject,
+      description: email.body,
+      status: email.read ? 'done' : 'in_progress',
+      priority: email.priority,
+      assignee: outlookEmail,
+      from: email.from,
+      due_date: email.date.split('T')[0],
+      created_at: email.date,
+      read: email.read,
+      aiInsight: null
+    }));
+  } catch (error) {
+    console.error('Outlook fetch error:', error);
+    return [];
+  }
+}
+
+// ===================== ENHANCED SYNC WITH EMAIL =====================
+async function syncAll() {
+  if (isSyncing) return;
+  isSyncing = true;
+  const btn = document.getElementById('sync-btn');
+  const icon = document.getElementById('sync-icon');
+  btn.disabled = true;
+  icon.className = 'spin'; icon.textContent = '⟳';
+
+  // Start with demo tasks (excluding email tasks which we'll add separately)
+  allTasks = JSON.parse(JSON.stringify(DEMO_TASKS.filter(t => !t.source.match(/gmail|outlook/))));
+
+  const integrationPromises = [];
+
+  // Add email integrations
+  if (config.gmailEmail) integrationPromises.push(fetchGmail().then(t => ({ source: 'gmail', tasks: t })));
+  if (config.outlookEmail) integrationPromises.push(fetchOutlook().then(t => ({ source: 'outlook', tasks: t })));
+
+  // Add other integrations (mock implementations for demo)
+  if (config.trelloKey) {
+    integrationPromises.push(Promise.resolve({ source: 'trello', tasks: DEMO_TASKS.filter(t => t.source === 'trello') }));
+  }
+  if (config.jiraEmail) {
+    integrationPromises.push(Promise.resolve({ source: 'jira', tasks: DEMO_TASKS.filter(t => t.source === 'jira') }));
+  }
+  if (config.asanaToken) {
+    integrationPromises.push(Promise.resolve({ source: 'asana', tasks: [] }));
+  }
+  if (config.mondayToken) {
+    integrationPromises.push(Promise.resolve({ source: 'monday', tasks: [] }));
+  }
+  if (config.gitlabToken) {
+    integrationPromises.push(Promise.resolve({ source: 'gitlab', tasks: [] }));
+  }
+
+  try {
+    const results = await Promise.allSettled(integrationPromises);
+    let liveCount = 0;
+
+    results.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+        allTasks.push(...result.value.tasks);
+        liveCount += result.value.tasks.length;
+      }
+    });
+
+    // Auto-convert important emails to tasks if enabled
+    if (config.gmailAutoTask) {
+      const importantEmails = allTasks.filter(t => 
+        t.source === 'gmail' && 
+        t.priority === 'high' && 
+        !t.read &&
+        !allTasks.some(existing => existing.originalEmailId === t.id)
+      );
+      
+      importantEmails.forEach(email => {
+        const taskFromEmail = {
+          id: `task-from-${email.id}-${Date.now()}`,
+          source: 'gmail',
+          type: 'task',
+          title: `TODO: ${email.title}`,
+          description: `From: ${email.from}\n\n${email.description}`,
+          status: 'todo',
+          priority: email.priority,
+          assignee: email.assignee,
+          due_date: email.due_date,
+          originalEmailId: email.id,
+          created_at: new Date().toISOString(),
+          aiInsight: null
+        };
+        allTasks.push(taskFromEmail);
+      });
+    }
+
+    showToast(`Synced ${liveCount} items across all sources!`, 'success');
+    
+    updateCounts();
+    applyFilters();
+    calculateVelocity();
+    
+  } catch (e) {
+    showToast('Sync failed: ' + e.message, 'error');
+  }
+
+  isSyncing = false;
+  btn.disabled = false;
+  icon.className = ''; icon.textContent = '⟳';
+}
+
+// ===================== EMAIL-SPECIFIC FUNCTIONS =====================
+function filterEmailFolder(folder) {
+  currentEmailFolder = folder;
+  applyFilters();
+}
+
+function replyToEmail() {
+  if (!currentTaskId) return;
+  const task = allTasks.find(t => t.id === currentTaskId);
+  if (!task || task.source !== 'gmail') return;
+  
+  // Open email reply in new window (mock)
+  window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${task.from}&su=Re: ${task.title}`, '_blank');
+  showToast('Opening Gmail compose window...', 'info');
+}
+
+function convertToTask() {
+  if (!currentTaskId) return;
+  const email = allTasks.find(t => t.id === currentTaskId);
+  if (!email || email.source !== 'gmail') return;
+  
+  const newTask = {
+    id: `task-${Date.now()}`,
+    source: 'gmail',
+    type: 'task',
+    title: `TODO: ${email.title}`,
+    description: email.description,
+    status: 'todo',
+    priority: email.priority,
+    assignee: email.assignee,
+    due_date: email.due_date,
+    originalEmailId: email.id,
+    created_at: new Date().toISOString(),
+    aiInsight: null
+  };
+  
+  allTasks.push(newTask);
+  updateCounts();
+  applyFilters();
+  closeTaskModal();
+  showToast('Task created from email', 'success');
+}
+
+// ===================== FILTER FUNCTIONS =====================
+function filterSource(source) {
+  currentSourceFilter = source;
+  document.querySelectorAll('.source-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  applyFilters();
+}
+
+function filterPriority(priority) {
+  currentSourceFilter = 'priority-' + priority;
+  document.querySelectorAll('.source-card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  applyFilters();
+}
+
+function filterStatus(status, btn) {
+  currentStatusFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterAssignee(assignee) {
+  // Implement assignee filter logic
+  showToast('Assignee filter coming soon', 'info');
+}
+
+function filterUnassigned() {
+  // Implement unassigned filter logic
+  showToast('Unassigned filter coming soon', 'info');
+}
+
+function searchTasks(query) {
+  currentSearch = query;
+  applyFilters();
+}
+
+function applyFilters() {
+  filteredTasks = allTasks.filter(t => {
+    // Source filter
+    if (currentSourceFilter.startsWith('priority-')) {
+      const priority = currentSourceFilter.split('-')[1];
+      if (t.priority !== priority) return false;
+    } else if (currentSourceFilter !== 'all' && t.source !== currentSourceFilter) return false;
+    
+    // Email folder filter
+    if (currentEmailFolder !== 'all' && t.source === 'gmail') {
+      if (currentEmailFolder === 'inbox' && !t.labels?.includes('INBOX')) return false;
+      if (currentEmailFolder === 'sent' && t.from !== config.gmailEmail) return false;
+      if (currentEmailFolder === 'drafts' && t.status === 'draft') return false;
+      if (currentEmailFolder === 'spam') return false;
+    }
+    
+    // Status filter
+    if (currentStatusFilter !== 'all' && t.status !== currentStatusFilter) return false;
+    
+    // Search
+    if (currentSearch) {
+      const searchLower = currentSearch.toLowerCase();
+      const matchesTitle = t.title?.toLowerCase().includes(searchLower);
+      const matchesDesc = t.description?.toLowerCase().includes(searchLower);
+      const matchesFrom = t.from?.toLowerCase().includes(searchLower);
+      if (!matchesTitle && !matchesDesc && !matchesFrom) return false;
+    }
+    
+    return true;
+  });
+  
+  if (currentView === 'kanban') renderKanban();
+  else renderTasks();
+  
+  document.getElementById('filtered-count').textContent = filteredTasks.length;
+}
+
+// ===================== RENDER FUNCTIONS =====================
+function renderTasks() {
+  const grid = document.getElementById('tasks-grid');
+  if (!filteredTasks.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No items match filters</div><div class="empty-sub">Try adjusting your search or filters.</div></div>`;
+    return;
+  }
+  
+  grid.innerHTML = filteredTasks.map(t => `
+    <div class="task-card ${t.aiInsight ? 'highlight' : ''} ${t.source === 'gmail' ? 'email' : ''}" 
+         draggable="true" 
+         ondragstart="dragStart(event)" 
+         ondragend="dragEnd(event)"
+         data-task-id="${t.id}">
+      <div class="card-header">
+        <span class="source-badge ${t.source}">
+          ${t.source === 'gmail' ? '<i class="fab fa-google"></i>' : ''}
+          ${t.source === 'outlook' ? '<i class="fab fa-microsoft"></i>' : ''}
+          ${t.source}
+        </span>
+        <div class="card-title" onclick="openTaskDetail('${t.id}')">
+          ${escHtml(t.title)}
+          ${t.source === 'gmail' && !t.read ? '<span class="email-indicator unread"><i class="fas fa-envelope"></i> Unread</span>' : ''}
+          ${t.source === 'gmail' && t.hasAttachments ? '<span class="email-indicator"><i class="fas fa-paperclip"></i></span>' : ''}
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="card-action-btn" onclick="quickEditTask('${t.id}')" title="Quick edit">
+          <i class="fas fa-pencil-alt"></i>
+        </button>
+        <button class="card-action-btn" onclick="analyzeTask('${t.id}')" title="AI analysis">
+          <i class="fas fa-robot"></i>
+        </button>
+        ${t.source === 'gmail' ? `
+        <button class="card-action-btn" onclick="replyToEmailFromCard('${t.id}')" title="Reply to email">
+          <i class="fas fa-reply"></i>
+        </button>
+        ` : ''}
+      </div>
+      <div class="card-meta">
+        <span class="priority-badge ${t.priority}">${t.priority.toUpperCase()}</span>
+        ${t.source === 'gmail' ? `<span class="status-badge"><i class="fas fa-user"></i> ${escHtml(t.from || 'Unknown')}</span>` : ''}
+        ${t.labels?.slice(0,2).map(l => `<span class="status-badge">${escHtml(l)}</span>`).join('')}
+      </div>
+      ${t.description ? `
+        <div class="card-desc">
+          ${escHtml(t.description.slice(0,100))}...
+          ${t.hasAttachments ? '<span class="email-attachment"><i class="fas fa-paperclip"></i> Attachments</span>' : ''}
+        </div>
+      ` : ''}
+      <div class="card-footer">
+        <span class="assignee"><i class="fas fa-user"></i> ${escHtml(t.assignee || 'Unassigned')}</span>
+        ${t.due_date ? `<span class="due-date ${isOverdue(t.due_date) ? 'overdue' : ''}">
+          <i class="fas fa-calendar"></i> ${formatDate(t.due_date)}
+        </span>` : ''}
+        ${t.source === 'gmail' && t.needsReply ? `
+          <span class="due-date" style="color: var(--accent2);">
+            <i class="fas fa-reply"></i> Needs reply
+          </span>
+        ` : ''}
+      </div>
+      ${t.aiInsight ? `<div class="ai-insight"><div class="ai-insight-label">AI Insight</div>${escHtml(t.aiInsight)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderKanban() {
+  const area = document.getElementById('tasks-area');
+  const columns = {
+    todo: filteredTasks.filter(t => t.status === 'todo'),
+    in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
+    done: filteredTasks.filter(t => t.status === 'done')
   };
 
-  document.addEventListener('DOMContentLoaded', function() {
-    loadSampleData();
-    updateStats();
-    renderView();
-    if (trelloToken) {
-      document.getElementById('trello-token-input').value = trelloToken;
-      loadTrelloBoards();
-      loadTrelloCards();
-    }
-    document.getElementById('search-input').addEventListener('input', filterItems);
-    initDragAndDrop();
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') setTheme('light');
-    if (deepseekConfig.apiKey) {
-      document.getElementById('deepseek-api-key').value = deepseekConfig.apiKey;
-      document.getElementById('deepseek-endpoint').value = deepseekConfig.endpoint;
-      document.getElementById('deepseek-model').value = deepseekConfig.model;
-    }
+  area.innerHTML = `
+    <div class="kanban-board">
+      ${Object.entries(columns).map(([status, tasks]) => `
+        <div class="kanban-column" ondrop="dropTask(event, '${status}')" ondragover="allowDrop(event)">
+          <div class="column-header">
+            <span>${status.replace('_', ' ').toUpperCase()}</span>
+            <span class="column-count">${tasks.length}</span>
+          </div>
+          <div class="column-tasks" id="column-${status}">
+            ${tasks.map(t => renderTaskCard(t)).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Add drag event listeners to cards
+  document.querySelectorAll('.task-card').forEach(card => {
+    card.setAttribute('draggable', 'true');
+    card.addEventListener('dragstart', dragStart);
+    card.addEventListener('dragend', dragEnd);
   });
+}
 
-  function loadSampleData() {
-    tasks = [
-      { id: '1', title: 'Design System Implementation', description: 'Create a comprehensive design system with components', source: 'trello', priority: 'high', status: 'in_progress', dueDate: '2025-03-20', assignee: '@jane', labels: ['design'] },
-      { id: '2', title: 'API Integration Testing', description: 'Test all API endpoints', source: 'jira', priority: 'medium', status: 'todo', dueDate: '2025-03-25', assignee: '@john', labels: ['backend'] },
-      { id: '3', title: 'User Research Sessions', description: 'Conduct user interviews', source: 'slack', priority: 'high', status: 'done', dueDate: '2025-03-15', assignee: '@sarah', labels: ['research'] },
-      { id: '4', title: 'Q1 Financial Review', description: 'Review Q1 financial reports', source: 'gmail', priority: 'medium', status: 'todo', dueDate: '2025-03-28', assignee: '@mike', labels: ['finance'] },
-      { id: '5', title: 'AI Model Optimization', description: 'Optimize AI models', source: 'deepseek', priority: 'high', status: 'in_progress', dueDate: '2025-03-22', assignee: '@alex', labels: ['ai'] }
-    ];
+function renderTaskCard(task) {
+  return `
+    <div class="task-card ${task.aiInsight ? 'highlight' : ''} ${task.source === 'gmail' ? 'email' : ''}" 
+         draggable="true" 
+         ondragstart="dragStart(event)" 
+         ondragend="dragEnd(event)"
+         data-task-id="${task.id}">
+      <div class="card-header">
+        <span class="source-badge ${task.source}">${task.source}</span>
+        <div class="card-title" onclick="openTaskDetail('${task.id}')">
+          ${escHtml(task.title.slice(0, 30))}${task.title.length > 30 ? '...' : ''}
+        </div>
+      </div>
+      <div class="card-meta">
+        <span class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</span>
+        ${task.source === 'gmail' && !task.read ? '<span class="status-badge"><i class="fas fa-envelope"></i> Unread</span>' : ''}
+      </div>
+      <div class="card-footer">
+        <span class="assignee"><i class="fas fa-user"></i> ${escHtml(task.assignee || 'Unassigned')}</span>
+      </div>
+    </div>
+  `;
+}
+
+function toggleView(view) {
+  currentView = view;
+  document.getElementById('view-grid').classList.toggle('active', view === 'grid');
+  document.getElementById('view-kanban').classList.toggle('active', view === 'kanban');
+  
+  if (view === 'kanban') {
+    renderKanban();
+  } else {
+    renderTasks();
+  }
+}
+
+// ===================== DRAG AND DROP =====================
+function allowDrop(e) {
+  e.preventDefault();
+  const column = e.target.closest('.column-tasks');
+  if (column) column.classList.add('drag-over');
+}
+
+function dragStart(e) {
+  const card = e.target.closest('.task-card');
+  if (!card) return;
+  
+  card.classList.add('dragging');
+  e.dataTransfer.setData('text/plain', card.dataset.taskId);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragEnd(e) {
+  const card = e.target.closest('.task-card');
+  if (card) card.classList.remove('dragging');
+  
+  document.querySelectorAll('.column-tasks').forEach(col => {
+    col.classList.remove('drag-over');
+  });
+}
+
+function dropTask(e, newStatus) {
+  e.preventDefault();
+  const column = e.target.closest('.column-tasks');
+  if (column) column.classList.remove('drag-over');
+  
+  const taskId = e.dataTransfer.getData('text/plain');
+  if (!taskId) return;
+  
+  const task = allTasks.find(t => t.id === taskId);
+  if (task && task.status !== newStatus) {
+    task.status = newStatus;
     updateCounts();
+    applyFilters();
+    showToast(`Task moved to ${newStatus.replace('_', ' ')}`, 'success');
   }
+}
 
-  function updateCounts() {
-    document.getElementById('count-all').innerText = tasks.length;
-    document.getElementById('count-trello').innerText = tasks.filter(t => t.source === 'trello').length;
-    document.getElementById('count-jira').innerText = tasks.filter(t => t.source === 'jira').length;
-    document.getElementById('count-slack').innerText = tasks.filter(t => t.source === 'slack').length;
-    document.getElementById('count-gmail').innerText = tasks.filter(t => t.source === 'gmail').length;
-    document.getElementById('count-deepseek').innerText = tasks.filter(t => t.source === 'deepseek').length;
-    document.getElementById('count-high').innerText = tasks.filter(t => t.priority === 'high').length;
-    document.getElementById('count-medium').innerText = tasks.filter(t => t.priority === 'medium').length;
-    document.getElementById('count-low').innerText = tasks.filter(t => t.priority === 'low').length;
-  }
-
-  function updateStats() {
-    document.getElementById('stat-total').innerText = tasks.length;
-    document.getElementById('stat-inprogress').innerText = tasks.filter(t => t.status === 'in_progress').length;
-    document.getElementById('stat-done').innerText = tasks.filter(t => t.status === 'done').length;
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('stat-overdue').innerText = tasks.filter(t => t.dueDate && t.dueDate < today && t.status !== 'done').length;
-  }
-
-  function getFilteredTasks() {
-    return tasks.filter(task => {
-      if (currentSource !== 'all' && task.source !== currentSource) return false;
-      if (currentPriority !== 'all' && task.priority !== currentPriority) return false;
-      if (currentStatus !== 'all' && task.status !== currentStatus) return false;
-      if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase()) && !task.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      return true;
-    });
-  }
-
-  function renderView() {
-    const filtered = getFilteredTasks();
-    if (currentView === 'grid') renderGrid(filtered);
-    else if (currentView === 'calendar') renderCalendar(filtered);
-    else if (currentView === 'gantt') renderGantt(filtered);
-  }
-
-  function renderGrid(tasks) {
-    let html = '<div class="tasks-grid">';
-    tasks.forEach(task => {
-      const isOverdue = task.dueDate && task.dueDate < new Date().toISOString().split('T')[0] && task.status !== 'done';
-      html += `<div class="task-card" onclick="openTaskDetails('${task.id}')">
-        <div class="card-header"><span class="source-badge ${task.source}">${task.source.toUpperCase()}</span><span class="card-title">${task.title}</span></div>
-        <div class="card-meta"><span class="priority-badge ${task.priority}">${task.priority.toUpperCase()}</span><span class="status-badge">${task.status.replace('_',' ')}</span></div>
-        <div class="card-desc">${task.description.substring(0,80)}...</div>
-        <div class="card-footer"><span class="assignee"><i class="fas fa-user"></i> ${task.assignee}</span><span class="due-date ${isOverdue?'overdue':''}"><i class="far fa-calendar"></i> ${task.dueDate||'No due'}</span></div>
-        <div class="item-actions"><button class="item-action-btn" onclick="editTask('${task.id}', event)"><i class="fas fa-edit"></i></button><button class="item-action-btn" onclick="deleteTask('${task.id}', event)"><i class="fas fa-trash"></i></button></div>
-      </div>`;
-    });
-    html += '</div>';
-    document.getElementById('content-area').innerHTML = html;
-  }
-
-  function renderCalendar(tasks) {
-    document.getElementById('content-area').innerHTML = '<div class="calendar-view"><div id="calendar"></div></div>';
-    const calendarEl = document.getElementById('calendar');
-    if (calendar) calendar.destroy();
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-      events: tasks.filter(t => t.dueDate).map(task => ({ title: task.title, start: task.dueDate, extendedProps: { task }, color: task.priority === 'high' ? '#ff4757' : task.priority === 'medium' ? '#ffa502' : '#00d4aa' })),
-      eventClick: info => openTaskDetails(info.event.extendedProps.task.id)
-    });
-    calendar.render();
-  }
-
-  function renderGantt(tasks) {
-    let html = '<div class="gantt-view"><div class="gantt-header"><div class="gantt-task-name">Task</div><div style="flex:1">Timeline</div></div>';
-    tasks.forEach(task => {
-      let width = task.priority === 'high' ? 80 : task.priority === 'medium' ? 60 : 40;
-      html += `<div class="gantt-row" data-task-id="${task.id}"><div class="gantt-task-name">${task.title}</div><div class="gantt-bar-container"><div class="gantt-bar" style="left:0px; width: ${width}px; background: linear-gradient(90deg, ${task.priority==='high'?'#ff4757':task.priority==='medium'?'#ffa502':'#00d4aa'}, #6c63ff)"></div></div></div>`;
-    });
-    html += '</div>';
-    document.getElementById('content-area').innerHTML = html;
-    initGanttDragDrop();
-  }
-
-  function initGanttDragDrop() {
-    interact('.gantt-bar').draggable({
-      listeners: {
-        move(event) {
-          let target = event.target;
-          let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-          target.style.transform = `translateX(${x}px)`;
-          target.setAttribute('data-x', x);
-        },
-        end(event) {
-          let row = event.target.closest('.gantt-row');
-          if (row) { let taskId = row.dataset.taskId; let task = tasks.find(t => t.id === taskId); if (task) showToast(`Task "${task.title}" moved`, 'info'); }
-        }
-      }
-    });
-  }
-
-  function setView(view, e) { e.preventDefault(); currentView = view; document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); renderView(); }
-  function filterSource(s) { currentSource = s; document.querySelectorAll('.source-card').forEach(c=>c.classList.remove('active')); event.currentTarget.classList.add('active'); renderView(); }
-  function filterPriority(p) { currentPriority = p; document.querySelectorAll('.source-card').forEach(c=>c.classList.remove('active')); event.currentTarget.classList.add('active'); renderView(); }
-  function filterStatus(s, btn) { currentStatus = s; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderView(); }
-  function filterItems() { searchQuery = document.getElementById('search-input').value; renderView(); }
+// ===================== TASK DETAIL FUNCTIONS =====================
+function openTaskDetail(taskId) {
+  currentTaskId = taskId;
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
   
-  function syncAll() {
-    let btn = document.getElementById('sync-btn'), icon = document.getElementById('sync-icon');
-    btn.disabled = true; icon.classList.add('spin');
-    
-    Promise.all([
-      trelloToken ? loadTrelloCards(true) : Promise.resolve(),
-      new Promise(resolve => setTimeout(resolve, 1000))
-    ]).then(() => {
-      btn.disabled = false; icon.classList.remove('spin');
-      showToast('All sources synced!','success');
-    });
+  document.getElementById('task-modal-title').textContent = task.title;
+  document.getElementById('task-modal-id').textContent = `ID: ${task.id} | Source: ${task.source}`;
+  document.getElementById('task-status').value = task.status || 'todo';
+  document.getElementById('task-priority').value = task.priority || 'medium';
+  document.getElementById('task-assignee').value = task.assignee || '';
+  document.getElementById('task-due').value = task.due_date || '';
+  
+  // Show/hide email thread section
+  const emailSection = document.getElementById('email-thread-section');
+  if (task.source === 'gmail' && task.emailData) {
+    emailSection.style.display = 'block';
+    renderEmailThread(task);
+  } else {
+    emailSection.style.display = 'none';
   }
   
-  function openConfig() { document.getElementById('config-modal').style.display = 'flex'; }
-  function closeConfig() { document.getElementById('config-modal').style.display = 'none'; }
-  function switchConfigTab(tab) {
-    document.querySelectorAll('#config-modal .tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('#config-modal .config-section').forEach(s=>s.style.display='none');
-    event.target.classList.add('active'); document.getElementById(`config-${tab}`).style.display='block';
+  // Load comments
+  const commentsDiv = document.getElementById('task-comments');
+  const taskComments = comments[taskId] || [];
+  
+  if (taskComments.length === 0) {
+    commentsDiv.innerHTML = '<p style="color: var(--muted); text-align: center;">No comments yet</p>';
+  } else {
+    commentsDiv.innerHTML = taskComments.map(comment => `
+      <div class="comment">
+        <div class="comment-avatar">${comment.author?.[0] || 'U'}</div>
+        <div class="comment-content">
+          <div class="comment-header">
+            <span class="comment-author">${comment.author}</span>
+            <span class="comment-time">${formatTimeAgo(comment.timestamp)}</span>
+          </div>
+          <div class="comment-text">${escHtml(comment.text)}</div>
+        </div>
+      </div>
+    `).join('');
   }
   
-  // REAL TRELLO FUNCTIONS
-  function saveTrelloToken() {
-    let token = document.getElementById('trello-token-input').value.trim();
-    let statusDiv = document.getElementById('trello-connection-status');
-    
-    if(!token) {
-      showToast('Please enter a token', 'error');
-      return;
-    }
-    
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '⏳ Validating token...';
-    statusDiv.style.background = 'rgba(255,165,2,0.1)';
-    
-    // Validate token by making a test API call
-    fetch(`https://api.trello.com/1/members/me?key=${TRELLO_API_KEY}&token=${token}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Invalid token');
-        }
-        return response.json();
-      })
-      .then(data => {
-        trelloToken = token;
-        localStorage.setItem('trelloToken', token);
-        
-        statusDiv.innerHTML = `✅ Connected as ${data.fullName} (${data.username})`;
-        statusDiv.style.background = 'rgba(0,212,170,0.1)';
-        
-        showToast('Token validated and saved', 'success');
-        loadTrelloBoards();
-        loadTrelloCards();
-        
-        // Update dot status
-        document.getElementById('trello-dot').classList.add('connected');
-      })
-      .catch(error => {
-        console.error('Error validating token:', error);
-        statusDiv.innerHTML = '❌ Invalid Trello token';
-        statusDiv.style.background = 'rgba(255,71,87,0.1)';
-        showToast('Invalid Trello token', 'error');
-      });
+  document.getElementById('task-modal').classList.add('open');
+}
+
+function renderEmailThread(task) {
+  const threadDiv = document.getElementById('email-thread');
+  threadDiv.innerHTML = `
+    <div class="email-message">
+      <div class="email-header">
+        <span class="email-from">From: ${task.from}</span>
+        <span>${formatDate(task.created_at)}</span>
+      </div>
+      <div class="email-subject">${task.title}</div>
+      <div class="email-body">${task.description.replace(/\n/g, '<br>')}</div>
+      ${task.hasAttachments ? `
+        <div style="margin-top: 8px;">
+          <i class="fas fa-paperclip"></i> Attachments:
+          ${task.attachments?.map(a => `<span style="margin-left: 8px;">📎 ${a}</span>`).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function closeTaskModal() {
+  document.getElementById('task-modal').classList.remove('open');
+}
+
+function closeTaskModalOutside(e) {
+  if (e.target.id === 'task-modal') closeTaskModal();
+}
+
+function updateTaskStatus(value) {
+  if (currentTaskId) {
+    const task = allTasks.find(t => t.id === currentTaskId);
+    if (task) task.status = value;
   }
-  
-  function loadTrelloBoards() {
-    if (!trelloToken) { 
-      document.getElementById('trello-board').innerHTML = '<option value="">Enter token first</option>'; 
-      document.getElementById('trello-board-status').innerText = 'No token';
-      return; 
-    }
-    
-    document.getElementById('trello-board').innerHTML = '<option value="">Loading boards...</option>';
-    document.getElementById('trello-board-status').innerText = 'Fetching boards...';
-    
-    fetch(`https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${trelloToken}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to fetch boards');
-        return response.json();
-      })
-      .then(boards => {
-        trelloBoards = boards.map(board => ({
-          id: board.id,
-          name: board.name,
-          lists: []
-        }));
-        
-        let opts = '<option value="">Select board</option>';
-        trelloBoards.forEach(b => {
-          opts += `<option value="${b.id}">${b.name}</option>`;
-        });
-        
-        document.getElementById('trello-board').innerHTML = opts;
-        document.getElementById('trello-board-status').innerText = `${boards.length} boards loaded`;
-        
-        // Update DeepSeek board dropdowns
-        if(document.getElementById('deepseek-board')) {
-          document.getElementById('deepseek-board').innerHTML = opts;
-        }
-        if(document.getElementById('deepseek-dest-board')) {
-          document.getElementById('deepseek-dest-board').innerHTML = opts;
-        }
-      })
-      .catch(error => {
-        console.error('Error loading boards:', error);
-        document.getElementById('trello-board').innerHTML = '<option value="">Error loading boards</option>';
-        document.getElementById('trello-board-status').innerText = 'Error loading boards';
-        showToast('Failed to load Trello boards', 'error');
-      });
+}
+
+function updateTaskPriority(value) {
+  if (currentTaskId) {
+    const task = allTasks.find(t => t.id === currentTaskId);
+    if (task) task.priority = value;
   }
-  
-  function loadTrelloLists() {
-    let boardId = document.getElementById('trello-board').value;
-    let listSel = document.getElementById('trello-list');
-    
-    if(!boardId) { 
-      listSel.innerHTML = '<option value="">Select board first</option>'; 
-      return; 
-    }
-    
-    listSel.innerHTML = '<option value="">Loading lists...</option>';
-    
-    fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${TRELLO_API_KEY}&token=${trelloToken}`)
-      .then(response => response.json())
-      .then(lists => {
-        let options = '<option value="">Select list</option>';
-        lists.forEach(list => {
-          options += `<option value="${list.id}">${list.name}</option>`;
-        });
-        listSel.innerHTML = options;
-        
-        // Also update DeepSeek list dropdown if needed
-        if(document.getElementById('deepseek-list')) {
-          document.getElementById('deepseek-list').innerHTML = options;
-        }
-      })
-      .catch(error => {
-        console.error('Error loading lists:', error);
-        listSel.innerHTML = '<option value="">Error loading lists</option>';
-      });
+}
+
+function updateTaskAssignee(value) {
+  if (currentTaskId) {
+    const task = allTasks.find(t => t.id === currentTaskId);
+    if (task) task.assignee = value;
   }
-  
-  function loadTrelloCards(silent = false) {
-    if (!trelloToken) return Promise.resolve();
-    
-    if (!silent) showToast('Loading Trello cards...', 'info');
-    
-    return fetch(`https://api.trello.com/1/members/me/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`)
-      .then(response => response.json())
-      .then(cards => {
-        // Remove old Trello tasks (keep other sources)
-        tasks = tasks.filter(t => t.source !== 'trello');
-        
-        // Add real Trello cards
-        cards.forEach(card => {
-          // Determine priority from labels
-          let priority = 'medium';
-          if (card.labels) {
-            if (card.labels.some(l => l.name.toLowerCase().includes('high') || l.color === 'red')) priority = 'high';
-            else if (card.labels.some(l => l.name.toLowerCase().includes('low') || l.color === 'green')) priority = 'low';
-          }
-          
-          tasks.push({
-            id: card.id,
-            title: card.name,
-            description: card.desc || '',
-            source: 'trello',
-            priority: priority,
-            status: card.dueComplete ? 'done' : (card.closed ? 'done' : 'in_progress'),
-            dueDate: card.due ? card.due.split('T')[0] : null,
-            assignee: card.members?.map(m => '@' + (m.username || m.fullName)).join(', ') || '@unassigned',
-            labels: card.labels?.map(l => l.name) || []
-          });
-        });
-        
-        updateCounts();
-        updateStats();
-        renderView();
-        
-        if (!silent) showToast(`Loaded ${cards.length} Trello cards`, 'success');
-        return cards;
-      })
-      .catch(error => {
-        console.error('Error loading cards:', error);
-        if (!silent) showToast('Failed to load Trello cards', 'error');
-        throw error;
-      });
+}
+
+function updateTaskDue(value) {
+  if (currentTaskId) {
+    const task = allTasks.find(t => t.id === currentTaskId);
+    if (task) task.due_date = value;
   }
+}
+
+function saveTaskChanges() {
+  updateCounts();
+  applyFilters();
+  closeTaskModal();
+  showToast('Task updated successfully', 'success');
+}
+
+function addComment() {
+  if (!currentTaskId) return;
   
-  function createTrelloCard() {
-    let listId = document.getElementById('trello-list').value;
-    let title = document.getElementById('trello-title').value.trim();
-    let desc = document.getElementById('trello-desc').value.trim();
-    let due = document.getElementById('trello-due').value;
-    let priorityLabel = document.getElementById('trello-priority-label').value.trim();
-    
-    if (!listId) {
-      showToast('Please select a list', 'error');
-      return;
-    }
-    
-    if (!title) {
-      showToast('Please enter a title', 'error');
-      return;
-    }
-    
-    showToast('Creating card...', 'info');
-    
-    // Build the card data
-    let cardData = {
-      idList: listId,
-      name: title,
-      desc: desc
+  const textarea = document.getElementById('new-comment');
+  const text = textarea.value.trim();
+  if (!text) return;
+  
+  if (!comments[currentTaskId]) comments[currentTaskId] = [];
+  
+  const comment = {
+    author: currentUser,
+    text: text,
+    timestamp: new Date().toISOString()
+  };
+  
+  comments[currentTaskId].push(comment);
+  localStorage.setItem('evronai-comments', JSON.stringify(comments));
+  
+  textarea.value = '';
+  openTaskDetail(currentTaskId); // Refresh comments
+  showToast('Comment added', 'success');
+}
+
+function quickEditTask(taskId) {
+  openTaskDetail(taskId);
+}
+
+function replyToEmailFromCard(taskId) {
+  currentTaskId = taskId;
+  replyToEmail();
+}
+
+// ===================== ANALYTICS FUNCTIONS =====================
+function calculateVelocity() {
+  // Group tasks by completion date (last 7 days)
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  const completedTasks = allTasks.filter(t => 
+    t.status === 'done' && 
+    t.created_at && 
+    new Date(t.created_at) > sevenDaysAgo
+  );
+  
+  // Calculate daily velocity
+  velocityData = Array(7).fill(0).map((_, i) => {
+    const date = new Date(sevenDaysAgo);
+    date.setDate(date.getDate() + i);
+    return {
+      date: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      count: completedTasks.filter(t => 
+        new Date(t.created_at).toDateString() === date.toDateString()
+      ).length
     };
+  });
+}
+
+function renderAnalytics() {
+  // This would render the analytics panel
+  showToast('Analytics view coming soon', 'info');
+}
+
+function switchView(view) {
+  const aiPanel = document.getElementById('ai-panel');
+  
+  if (view === 'analytics') {
+    aiPanel.innerHTML = '<div class="analytics-panel"><div class="analytics-section">Analytics coming soon...</div></div>';
+  }
+  
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ===================== CONFIG FUNCTIONS =====================
+function openConfig() {
+  document.getElementById('deepseek-key').value = config.deepseekKey || '';
+  document.getElementById('deepseek-endpoint').value = config.deepseekEndpoint || 'https://api.deepseek.com/v1';
+  
+  document.getElementById('gmail-client-id').value = config.gmailClientId || '';
+  document.getElementById('gmail-client-secret').value = config.gmailClientSecret || '';
+  document.getElementById('gmail-email').value = config.gmailEmail || '';
+  document.getElementById('gmail-realtime').checked = config.gmailRealtime || false;
+  document.getElementById('gmail-auto-task').checked = config.gmailAutoTask || false;
+  document.getElementById('gmail-track-replies').checked = config.gmailTrackReplies || false;
+  document.getElementById('gmail-labels').value = config.gmailLabels || '';
+  
+  document.getElementById('outlook-app-id').value = config.outlookAppId || '';
+  document.getElementById('outlook-client-secret').value = config.outlookClientSecret || '';
+  document.getElementById('outlook-email').value = config.outlookEmail || '';
+  document.getElementById('outlook-realtime').checked = config.outlookRealtime || false;
+  
+  document.getElementById('trello-api-key').value = config.trelloKey || '';
+  document.getElementById('trello-token').value = config.trelloToken || '';
+  document.getElementById('trello-board-id').value = config.trelloBoardId || '';
+  document.getElementById('trello-realtime').checked = config.trelloRealtime || false;
+  
+  document.getElementById('jira-domain').value = config.jiraDomain || '';
+  document.getElementById('jira-email').value = config.jiraEmail || '';
+  document.getElementById('jira-token').value = config.jiraToken || '';
+  document.getElementById('jira-jql').value = config.jiraJql || '';
+  
+  document.getElementById('asana-token').value = config.asanaToken || '';
+  document.getElementById('asana-workspace').value = config.asanaWorkspace || '';
+  
+  document.getElementById('monday-token').value = config.mondayToken || '';
+  document.getElementById('monday-board').value = config.mondayBoard || '';
+  
+  document.getElementById('gitlab-token').value = config.gitlabToken || '';
+  document.getElementById('gitlab-url').value = config.gitlabUrl || 'https://gitlab.com';
+  document.getElementById('gitlab-project').value = config.gitlabProject || '';
+  
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeConfig() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target.id === 'modal') closeConfig();
+}
+
+function switchIntegrationTab(tab) {
+  document.querySelectorAll('.integration-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  event.target.closest('.integration-tab').classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function saveConfig() {
+  config = {
+    deepseekKey: document.getElementById('deepseek-key')?.value.trim() || config.deepseekKey,
+    deepseekEndpoint: document.getElementById('deepseek-endpoint')?.value.trim() || 'https://api.deepseek.com/v1',
     
-    if (due) {
-      cardData.due = due;
-    }
+    gmailClientId: document.getElementById('gmail-client-id')?.value.trim() || config.gmailClientId,
+    gmailClientSecret: document.getElementById('gmail-client-secret')?.value.trim() || config.gmailClientSecret,
+    gmailEmail: document.getElementById('gmail-email')?.value.trim() || config.gmailEmail,
+    gmailRealtime: document.getElementById('gmail-realtime')?.checked || false,
+    gmailAutoTask: document.getElementById('gmail-auto-task')?.checked || false,
+    gmailTrackReplies: document.getElementById('gmail-track-replies')?.checked || false,
+    gmailLabels: document.getElementById('gmail-labels')?.value.trim() || config.gmailLabels,
     
-    // Create the card
-    fetch(`https://api.trello.com/1/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cardData)
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to create card');
-      return response.json();
-    })
-    .then(card => {
-      // If priority label was provided, add it
-      if (priorityLabel) {
-        // First, get board labels
-        return fetch(`https://api.trello.com/1/boards/${card.idBoard}/labels?key=${TRELLO_API_KEY}&token=${trelloToken}`)
-          .then(r => r.json())
-          .then(labels => {
-            // Find matching label
-            let matchingLabel = labels.find(l => 
-              l.name.toLowerCase() === priorityLabel.toLowerCase() ||
-              l.color === priorityLabel.toLowerCase()
-            );
-            
-            if (matchingLabel) {
-              // Add label to card
-              return fetch(`https://api.trello.com/1/cards/${card.id}/idLabels?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  value: matchingLabel.id
-                })
-              });
-            }
-          })
-          .then(() => card);
-      }
-      return card;
-    })
-    .then(card => {
-      // Add to local tasks
-      tasks.push({
-        id: card.id,
-        title: card.name,
-        description: card.desc || '',
-        source: 'trello',
-        priority: priorityLabel ? (priorityLabel.toLowerCase().includes('high') ? 'high' : 
-                priorityLabel.toLowerCase().includes('low') ? 'low' : 'medium') : 'medium',
-        status: 'todo',
-        dueDate: card.due ? card.due.split('T')[0] : null,
-        assignee: '@trello',
-        labels: priorityLabel ? [priorityLabel] : []
-      });
-      
+    outlookAppId: document.getElementById('outlook-app-id')?.value.trim() || config.outlookAppId,
+    outlookClientSecret: document.getElementById('outlook-client-secret')?.value.trim() || config.outlookClientSecret,
+    outlookEmail: document.getElementById('outlook-email')?.value.trim() || config.outlookEmail,
+    outlookRealtime: document.getElementById('outlook-realtime')?.checked || false,
+    
+    trelloKey: document.getElementById('trello-api-key')?.value.trim() || config.trelloKey,
+    trelloToken: document.getElementById('trello-token')?.value.trim() || config.trelloToken,
+    trelloBoardId: document.getElementById('trello-board-id')?.value.trim() || config.trelloBoardId,
+    trelloRealtime: document.getElementById('trello-realtime')?.checked || false,
+    
+    jiraDomain: document.getElementById('jira-domain')?.value.trim() || config.jiraDomain,
+    jiraEmail: document.getElementById('jira-email')?.value.trim() || config.jiraEmail,
+    jiraToken: document.getElementById('jira-token')?.value.trim() || config.jiraToken,
+    jiraJql: document.getElementById('jira-jql')?.value.trim() || config.jiraJql,
+    
+    asanaToken: document.getElementById('asana-token')?.value.trim() || config.asanaToken,
+    asanaWorkspace: document.getElementById('asana-workspace')?.value.trim() || config.asanaWorkspace,
+    
+    mondayToken: document.getElementById('monday-token')?.value.trim() || config.mondayToken,
+    mondayBoard: document.getElementById('monday-board')?.value.trim() || config.mondayBoard,
+    
+    gitlabToken: document.getElementById('gitlab-token')?.value.trim() || config.gitlabToken,
+    gitlabUrl: document.getElementById('gitlab-url')?.value.trim() || 'https://gitlab.com',
+    gitlabProject: document.getElementById('gitlab-project')?.value.trim() || config.gitlabProject,
+  };
+  
+  localStorage.setItem('evronai-config', JSON.stringify(config));
+  closeConfig();
+  showToast('Configuration saved! Syncing...', 'success');
+  
+  setTimeout(syncAll, 500);
+}
+
+// ===================== CHAT FUNCTIONS =====================
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  addMessage('user', text);
+  input.value = '';
+  autoResize(input);
+  
+  // Simulate AI response
+  setTimeout(() => {
+    addMessage('ai', 'Thanks for your message! I\'m analyzing your tasks and will respond shortly. This is a demo version - connect your DeepSeek API key for real AI responses.');
+  }, 1000);
+}
+
+function sendQuickPrompt(btn) {
+  const text = btn.textContent;
+  addMessage('user', text);
+  
+  // Simulate AI response
+  setTimeout(() => {
+    addMessage('ai', 'I\'m analyzing that request. In the full version with DeepSeek API connected, I would provide detailed insights about your tasks.');
+  }, 1000);
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function addMessage(role, text) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  
+  // Process text for line breaks and basic formatting
+  const formattedText = escHtml(text).replace(/\n/g, '<br>');
+  
+  // Add emoji prefix for AI messages
+  const prefix = role === 'ai' ? '🤖 ' : '';
+  
+  div.innerHTML = `
+    <div class="msg-label">${role === 'user' ? '👤 You' : '🤖 Evron AI'}</div>
+    <div class="msg-bubble" style="${role === 'ai' ? 'font-weight: 500;' : ''}">${prefix}${formattedText}</div>
+  `;
+  
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function analyzeTask(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+  
+  addMessage('user', `Analyze task: ${task.title}`);
+  setTimeout(() => {
+    addMessage('ai', `Based on my analysis, this ${task.source} task has ${task.priority} priority and is currently ${task.status.replace('_', ' ')}. Connect your DeepSeek API key for more detailed insights.`);
+  }, 1000);
+}
+
+// ===================== EXPORT FUNCTIONS =====================
+function exportData(format) {
+  if (format === 'csv') {
+    exportToCSV();
+  } else if (format === 'pdf') {
+    exportToPDF();
+  }
+}
+
+function exportToCSV() {
+  const headers = ['ID', 'Source', 'Title', 'Status', 'Priority', 'Assignee', 'Due Date', 'Description'];
+  const rows = filteredTasks.map(t => [
+    t.id,
+    t.source,
+    t.title,
+    t.status,
+    t.priority,
+    t.assignee || '',
+    t.due_date || '',
+    t.description ? t.description.replace(/,/g, ';') : ''
+  ]);
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `evronai-tasks-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  
+  showToast('CSV exported successfully', 'success');
+}
+
+function exportToPDF() {
+  showToast('PDF export coming soon', 'info');
+}
+
+// ===================== SHARE FUNCTIONS =====================
+function shareView() {
+  const modal = document.getElementById('share-modal');
+  const shareLink = document.getElementById('share-link');
+  const embedCode = document.getElementById('embed-code');
+  
+  const params = new URLSearchParams({
+    source: currentSourceFilter,
+    status: currentStatusFilter,
+    search: currentSearch,
+    view: currentView
+  });
+  
+  const url = `${window.location.origin}${window.location.pathname}?${params}`;
+  shareLink.value = url;
+  embedCode.value = `<iframe src="${url}" width="100%" height="800" frameborder="0"></iframe>`;
+  
+  modal.classList.add('open');
+}
+
+function copyShareLink() {
+  const link = document.getElementById('share-link');
+  link.select();
+  document.execCommand('copy');
+  showToast('Link copied to clipboard', 'success');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+function closeShareModalOutside(e) {
+  if (e.target.id === 'share-modal') closeShareModal();
+}
+
+// ===================== UTILITY FUNCTIONS =====================
+function updateCounts() {
+  document.getElementById('count-all').textContent = allTasks.length;
+  document.getElementById('count-gmail').textContent = allTasks.filter(t => t.source === 'gmail').length;
+  document.getElementById('count-outlook').textContent = allTasks.filter(t => t.source === 'outlook').length;
+  document.getElementById('count-trello').textContent = allTasks.filter(t => t.source === 'trello').length;
+  document.getElementById('count-jira').textContent = allTasks.filter(t => t.source === 'jira').length;
+  document.getElementById('count-asana').textContent = allTasks.filter(t => t.source === 'asana').length;
+  document.getElementById('count-monday').textContent = allTasks.filter(t => t.source === 'monday').length;
+  document.getElementById('count-gitlab').textContent = allTasks.filter(t => t.source === 'gitlab').length;
+  
+  document.getElementById('count-high').textContent = allTasks.filter(t => t.priority === 'high').length;
+  document.getElementById('count-medium').textContent = allTasks.filter(t => t.priority === 'medium').length;
+  document.getElementById('count-low').textContent = allTasks.filter(t => t.priority === 'low').length;
+  
+  document.getElementById('count-inbox').textContent = allTasks.filter(t => t.source === 'gmail' && t.labels?.includes('INBOX')).length;
+  document.getElementById('count-unread').textContent = allTasks.filter(t => t.source === 'gmail' && !t.read).length;
+
+  document.getElementById('stat-total').textContent = allTasks.length;
+  document.getElementById('stat-inprogress').textContent = allTasks.filter(t => t.status === 'in_progress').length;
+  document.getElementById('stat-done').textContent = allTasks.filter(t => t.status === 'done').length;
+  document.getElementById('stat-overdue').textContent = allTasks.filter(t => t.due_date && isOverdue(t.due_date) && t.status !== 'done').length;
+  document.getElementById('stat-unread').textContent = allTasks.filter(t => t.source === 'gmail' && !t.read).length;
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function isOverdue(d) {
+  return d && new Date(d) < new Date();
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTimeAgo(timestamp) {
+  const minutes = Math.floor((new Date() - new Date(timestamp)) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+  return `${Math.floor(minutes / 1440)}d ago`;
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ===================== DEMO TASKS =====================
+const DEMO_TASKS = [
+  { id: 'trello-001', source: 'trello', title: 'Design new onboarding flow', description: 'Revamp the first-time user experience.', status: 'in_progress', priority: 'high', assignee: 'sarah.k', due_date: '2026-03-18', labels: ['Design', 'UX'], created_at: '2026-03-01', aiInsight: null },
+  { id: 'trello-002', source: 'trello', title: 'Set up CI/CD pipeline for staging', description: 'Configure GitHub Actions.', status: 'todo', priority: 'high', assignee: 'devops-team', due_date: '2026-03-20', labels: ['DevOps'], created_at: '2026-03-02', aiInsight: null },
+  { id: 'jira-AUTH-201', source: 'jira', title: '[AUTH-201] Implement OAuth2 with Google & GitHub', description: 'Add social login options.', status: 'in_progress', priority: 'high', assignee: 'Priya Sharma', due_date: '2026-03-17', labels: ['auth'], created_at: '2026-03-05', aiInsight: null },
+  { id: 'jira-PERF-88', source: 'jira', title: '[PERF-88] Reduce dashboard load time', description: 'Current p95 load time is 3.2s.', status: 'todo', priority: 'high', assignee: 'Marcus Chen', due_date: '2026-03-21', labels: ['performance'], created_at: '2026-03-06', aiInsight: null }
+];
+
+// ===================== INITIALIZATION =====================
+window.onload = () => {
+  loadTheme();
+  
+  // Load demo tasks
+  allTasks = JSON.parse(JSON.stringify(DEMO_TASKS));
+  
+  // If Gmail is configured, fetch emails
+  if (config.gmailEmail) {
+    fetchGmail().then(emails => {
+      allTasks.push(...emails);
       updateCounts();
-      updateStats();
-      renderView();
-      showToast('Card created successfully!', 'success');
-      closeCreateModal();
-    })
-    .catch(error => {
-      console.error('Error creating card:', error);
-      showToast('Failed to create card: ' + error.message, 'error');
+      applyFilters();
     });
   }
   
-  function refreshTrelloBoards(e) { 
-    e.stopPropagation(); 
-    if (trelloToken) {
-      loadTrelloBoards();
-      showToast('Boards refreshed', 'success');
-    } else {
-      showToast('Please enter your Trello token first', 'error');
-    }
+  updateCounts();
+  applyFilters();
+  showToast('🎯 Evronai ready - Connect Gmail to see emails', 'success');
+  
+  // Check for shared view params
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('source')) {
+    currentSourceFilter = params.get('source');
+    currentStatusFilter = params.get('status') || 'all';
+    currentSearch = params.get('search') || '';
+    currentView = params.get('view') || 'grid';
+    applyFilters();
   }
-  
-  function loadDeepSeekCards() {
-    let trelloTasks = tasks.filter(t=>t.source==='trello');
-    let opts = '<option value="">Select card</option>'; 
-    trelloTasks.forEach(t=>opts+=`<option value="${t.id}">${t.title}</option>`);
-    if(document.getElementById('deepseek-card-select')) document.getElementById('deepseek-card-select').innerHTML = opts;
-    if(document.getElementById('deepseek-delete-select')) document.getElementById('deepseek-delete-select').innerHTML = opts;
-    if(document.getElementById('deepseek-move-select')) document.getElementById('deepseek-move-select').innerHTML = opts;
-  }
-  
-  function loadDestinationLists() {
-    let boardId = document.getElementById('deepseek-dest-board').value;
-    let listSel = document.getElementById('deepseek-dest-list');
-    if(!boardId) { listSel.innerHTML = '<option value="">Select board first</option>'; return; }
-    
-    if (!trelloToken) {
-      listSel.innerHTML = '<option value="">No token</option>';
-      return;
-    }
-    
-    listSel.innerHTML = '<option value="">Loading lists...</option>';
-    
-    fetch(`https://api.trello.com/1/boards/${boardId}/lists?key=${TRELLO_API_KEY}&token=${trelloToken}`)
-      .then(response => response.json())
-      .then(lists => {
-        let options = '<option value="">Select list</option>';
-        lists.forEach(list => {
-          options += `<option value="${list.id}">${list.name}</option>`;
-        });
-        listSel.innerHTML = options;
-      })
-      .catch(error => {
-        console.error('Error loading lists:', error);
-        listSel.innerHTML = '<option value="">Error loading lists</option>';
-      });
-  }
-  
-  function saveDeepSeekConfig() {
-    deepseekConfig.apiKey = document.getElementById('deepseek-api-key').value;
-    deepseekConfig.endpoint = document.getElementById('deepseek-endpoint').value;
-    deepseekConfig.model = document.getElementById('deepseek-model').value;
-    localStorage.setItem('deepseekApiKey', deepseekConfig.apiKey);
-    localStorage.setItem('deepseekEndpoint', deepseekConfig.endpoint);
-    localStorage.setItem('deepseekModel', deepseekConfig.model);
-    showToast('DeepSeek config saved','success');
-  }
-  
-  function testDeepSeekConnection() {
-    let res = document.getElementById('deepseek-test-result'); res.style.display='block';
-    if(document.getElementById('deepseek-api-key').value) { 
-      res.innerHTML='✅ Connection simulated! (demo)'; 
-      res.style.background='rgba(0,212,170,0.1)'; 
-    } else { 
-      res.innerHTML='❌ No API key'; 
-      res.style.background='rgba(255,71,87,0.1)'; 
-    }
-  }
-  
-  function showCreateModal(source, e) { 
-    if(e) e.stopPropagation();
-    document.getElementById('create-modal').style.display = 'flex';
-    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase()+source.slice(1)}`;
-    document.querySelectorAll('.source-form').forEach(f=>f.style.display='none');
-    document.getElementById(source+'-form').style.display = 'block';
-    document.querySelectorAll('#source-tabs .tab').forEach(t=>t.classList.remove('active'));
-    document.querySelector(`#source-tabs .tab[onclick="switchSourceTab('${source}')"]`).classList.add('active');
-    
-    if(source==='deepseek') { 
-      document.getElementById('create-action-buttons').style.display='none'; 
-      loadDeepSeekCards(); 
-      loadTrelloBoards(); 
-      updateDeepSeekForm(); 
-    } else { 
-      document.getElementById('create-action-buttons').style.display='flex'; 
-    }
-    
-    if(source==='trello') loadTrelloBoards();
-  }
-  
-  function closeCreateModal() { document.getElementById('create-modal').style.display='none'; }
-  
-  function switchSourceTab(source) {
-    document.querySelectorAll('#source-tabs .tab').forEach(t=>t.classList.remove('active')); 
-    event.target.classList.add('active');
-    document.querySelectorAll('.source-form').forEach(f=>f.style.display='none'); 
-    document.getElementById(source+'-form').style.display='block';
-    document.getElementById('modal-title').innerText = `Create New ${source.charAt(0).toUpperCase()+source.slice(1)}`;
-    
-    if(source==='deepseek') { 
-      document.getElementById('create-action-buttons').style.display='none'; 
-      loadDeepSeekCards(); 
-      loadTrelloBoards(); 
-      updateDeepSeekForm(); 
-    } else { 
-      document.getElementById('create-action-buttons').style.display='flex'; 
-    }
-    
-    if(source==='trello') loadTrelloBoards();
-  }
-  
-  function updateDeepSeekForm() {
-    let type = document.getElementById('deepseek-command-type').value;
-    document.getElementById('deepseek-create-fields').style.display = type==='create'?'block':'none';
-    document.getElementById('deepseek-update-fields').style.display = type==='update'?'block':'none';
-    document.getElementById('deepseek-delete-fields').style.display = type==='delete'?'block':'none';
-    document.getElementById('deepseek-move-fields').style.display = type==='move'?'block':'none';
-    document.getElementById('deepseek-analyze-fields').style.display = type==='analyze'?'block':'none';
-    if(['update','delete','move'].includes(type)) loadDeepSeekCards();
-    if(['create','move'].includes(type)) loadTrelloBoards();
-  }
-  
-  function executeDeepSeekCommand() {
-    let type = document.getElementById('deepseek-command-type').value;
-    if(type==='create') { 
-      let title = document.getElementById('deepseek-title').value; 
-      if(!title) { showToast('Enter title','error'); return; }
-      
-      if (!trelloToken) {
-        showToast('Please configure Trello token first', 'error');
-        return;
-      }
-      
-      let listId = document.getElementById('deepseek-list').value;
-      if (!listId) {
-        showToast('Please select a list', 'error');
-        return;
-      }
-      
-      showToast('Creating card via DeepSeek...', 'info');
-      
-      fetch(`https://api.trello.com/1/cards?key=${TRELLO_API_KEY}&token=${trelloToken}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          idList: listId,
-          name: title,
-          desc: document.getElementById('deepseek-desc').value || '',
-          due: document.getElementById('deepseek-due').value || null
-        })
-      })
-      .then(response => response.json())
-      .then(card => {
-        tasks.push({ 
-          id: card.id, 
-          title, 
-          description: document.getElementById('deepseek-desc').value||'', 
-          source:'trello', 
-          priority:document.getElementById('deepseek-priority').value, 
-          status:'todo', 
-          dueDate:document.getElementById('deepseek-due').value||null, 
-          assignee:'@deepseek', 
-          labels:[] 
-        });
-        updateCounts(); 
-        updateStats(); 
-        renderView(); 
-        showToast('Card created','success'); 
-        addAIMessage(`✅ Created card: ${title}`); 
-        closeCreateModal();
-      })
-      .catch(error => {
-        showToast('Failed to create card: ' + error.message, 'error');
-      });
-    }
-    else if(type==='update') { 
-      let id = document.getElementById('deepseek-card-select').value; 
-      if(!id) return; 
-      let task = tasks.find(t=>t.id===id); 
-      if(task) { 
-        if(document.getElementById('deepseek-new-title').value) task.title = document.getElementById('deepseek-new-title').value; 
-        if(document.getElementById('deepseek-new-desc').value) task.description = document.getElementById('deepseek-new-desc').value; 
-        if(document.getElementById('deepseek-new-due').value) task.dueDate = document.getElementById('deepseek-new-due').value; 
-        if(document.getElementById('deepseek-new-priority').value) task.priority = document.getElementById('deepseek-new-priority').value; 
-        updateCounts(); 
-        updateStats(); 
-        renderView(); 
-        showToast('Card updated','success'); 
-        addAIMessage(`✅ Updated card`); 
-        closeCreateModal(); 
-      } 
-    }
-    else if(type==='delete') { 
-      let id = document.getElementById('deepseek-delete-select').value; 
-      if(!id) return; 
-      let idx = tasks.findIndex(t=>t.id===id); 
-      if(idx!==-1) { 
-        let title = tasks[idx].title; 
-        tasks.splice(idx,1); 
-        updateCounts(); 
-        updateStats(); 
-        renderView(); 
-        showToast('Card deleted','success'); 
-        addAIMessage(`✅ Deleted: ${title}`); 
-        closeCreateModal(); 
-      } 
-    }
-    else if(type==='move') { 
-      let id = document.getElementById('deepseek-move-select').value; 
-      if(!id) return; 
-      showToast('Move simulated (demo)','info'); 
-      addAIMessage(`🔄 Move command executed (demo)`); 
-      closeCreateModal(); 
-    }
-    else if(type==='analyze') { 
-      let analysis = ''; 
-      if(document.getElementById('deepseek-analysis-type').value==='overdue') {
-        let overdue = tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done');
-        analysis = `📊 Overdue tasks: ${overdue.length}\n` + overdue.map(t => `• ${t.title} (due ${t.dueDate})`).join('\n');
-      } else if (document.getElementById('deepseek-analysis-type').value === 'high-priority') {
-        let high = tasks.filter(t => t.priority === 'high');
-        analysis = `📊 High priority tasks: ${high.length}\n` + high.map(t => `• ${t.title}`).join('\n');
-      } else {
-        analysis = `📊 Total tasks: ${tasks.length}\n` +
-                  `In Progress: ${tasks.filter(t => t.status === 'in_progress').length}\n` +
-                  `Done: ${tasks.filter(t => t.status === 'done').length}\n` +
-                  `Overdue: ${tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done').length}`;
-      }
-      addAIMessage(analysis); 
-      closeCreateModal(); 
-    }
-  }
-  
-  function createItem() { 
-    let active = document.querySelector('#source-tabs .tab.active').innerText.toLowerCase();
-    if(active==='trello') { 
-      createTrelloCard();
-    }
-    else if(active==='jira') { 
-      let s = document.getElementById('jira-summary').value; 
-      if(!s) return; 
-      tasks.push({ 
-        id: Date.now().toString(), 
-        title: `[${document.getElementById('jira-project').value||'PROJ'}] ${s}`, 
-        description: document.getElementById('jira-description').value||'', 
-        source:'jira', 
-        priority: (document.getElementById('jira-priority').value||'medium').toLowerCase(), 
-        status:'todo', 
-        dueDate: new Date(Date.now()+7*24*60*60*1000).toISOString().split('T')[0], 
-        assignee: document.getElementById('jira-assignee').value?'@'+document.getElementById('jira-assignee').value:'@unassigned', 
-        labels:[] 
-      }); 
-      updateCounts(); 
-      updateStats(); 
-      renderView(); 
-      showToast('Jira issue created','success'); 
-      closeCreateModal(); 
-    }
-    else if(active==='slack') { 
-      let msg = document.getElementById('slack-message').value; 
-      if(!msg) return; 
-      tasks.push({ 
-        id: Date.now().toString(), 
-        title: 'Slack: '+msg.substring(0,30), 
-        description: msg, 
-        source:'slack', 
-        priority:'medium', 
-        status:'done', 
-        dueDate: new Date().toISOString().split('T')[0], 
-        assignee:'@user', 
-        labels:[] 
-      }); 
-      updateCounts(); 
-      updateStats(); 
-      renderView(); 
-      showToast('Slack message logged','success'); 
-      closeCreateModal(); 
-    }
-    else if(active==='gmail') { 
-      let subj = document.getElementById('gmail-subject').value; 
-      if(!subj) return; 
-      tasks.push({ 
-        id: Date.now().toString(), 
-        title: 'Email: '+subj, 
-        description: 'To: '+document.getElementById('gmail-to').value+'\n'+document.getElementById('gmail-body').value, 
-        source:'gmail', 
-        priority: document.getElementById('gmail-important').checked?'high':'medium', 
-        status:'todo', 
-        dueDate: new Date(Date.now()+3*24*60*60*1000).toISOString().split('T')[0], 
-        assignee:'@user', 
-        labels:[] 
-      }); 
-      updateCounts(); 
-      updateStats(); 
-      renderView(); 
-      showToast('Email draft created','success'); 
-      closeCreateModal(); 
-    }
-  }
-  
-  function openTaskDetails(id) { 
-    let t = tasks.find(t=>t.id===id); 
-    if(t) addAIMessage(`📋 **${t.title}**\n${t.description}\nPriority: ${t.priority}\nStatus: ${t.status}\nDue: ${t.dueDate}`); 
-  }
-  
-  function editTask(id, e) { e.stopPropagation(); showToast('Edit feature - demo','info'); }
-  
-  function deleteTask(id, e) { 
-    e.stopPropagation(); 
-    if(confirm('Delete?')) { 
-      let idx = tasks.findIndex(t=>t.id===id); 
-      if(idx!==-1) { 
-        let title = tasks[idx].title; 
-        tasks.splice(idx,1); 
-        updateCounts(); 
-        updateStats(); 
-        renderView(); 
-        showToast(`Deleted ${title}`,'success'); 
-      } 
-    } 
-  }
-  
-  function sendMessage() { 
-    let inp = document.getElementById('chat-input'); 
-    let msg = inp.value.trim(); 
-    if(msg) { 
-      addUserMessage(msg); 
-      processAIMessage(msg); 
-      inp.value=''; 
-    } 
-  }
-  
-  function sendQuickPrompt(p) { 
-    addUserMessage(p); 
-    processAIMessage(p); 
-  }
-  
-  function addUserMessage(m) { 
-    let a = document.getElementById('chat-area'); 
-    let d = document.createElement('div'); 
-    d.className='msg user'; 
-    d.innerHTML=`<div class="msg-bubble">${m}</div>`; 
-    a.appendChild(d); 
-    a.scrollTop = a.scrollHeight; 
-  }
-  
-  function addAIMessage(m) { 
-    let a = document.getElementById('chat-area'); 
-    let d = document.createElement('div'); 
-    d.className='msg ai'; 
-    d.innerHTML=`<div class="msg-bubble">${m.replace(/\n/g,'<br>')}</div>`; 
-    a.appendChild(d); 
-    a.scrollTop = a.scrollHeight; 
-  }
-  
-  function processAIMessage(m) {
-    setTimeout(() => {
-      let response = '';
-      if(m.toLowerCase().includes('create')) { 
-        let title = m.match(/called ['"]?([^'"]+)/i)?.[1] || 'New Task'; 
-        tasks.push({ 
-          id: Date.now().toString(), 
-          title, 
-          description:'AI created', 
-          source:'trello', 
-          priority: m.includes('high')?'high':'medium', 
-          status:'todo', 
-          dueDate: new Date(Date.now()+7*24*60*60*1000).toISOString().split('T')[0], 
-          assignee:'@deepseek', 
-          labels:[] 
-        }); 
-        updateCounts(); 
-        updateStats(); 
-        renderView(); 
-        response=`✅ Created card: ${title}`; 
-      }
-      else if(m.toLowerCase().includes('delete')) { 
-        let delMatch = m.match(/['"]?([^'"]+card[^'"]*)/i); 
-        if(delMatch) { 
-          let term = delMatch[1].toLowerCase(); 
-          let idx = tasks.findIndex(t => t.title.toLowerCase().includes(term) || t.description.toLowerCase().includes(term)); 
-          if(idx!==-1) { 
-            let ttl = tasks[idx].title; 
-            tasks.splice(idx,1); 
-            updateCounts(); 
-            updateStats(); 
-            renderView(); 
-            response=`✅ Deleted: ${ttl}`; 
-          } else response='❌ Card not found'; 
-        } else response='Specify card title'; 
-      }
-      else if(m.toLowerCase().includes('show')||m.toLowerCase().includes('high priority')) { 
-        let high = tasks.filter(t=>t.priority==='high'); 
-        response = `📋 High priority (${high.length}): `+high.map(t=>t.title).join(', '); 
-      }
-      else if(m.toLowerCase().includes('overdue')) { 
-        let overdue = tasks.filter(t => t.dueDate && t.dueDate < new Date().toISOString().split('T')[0] && t.status !== 'done');
-        response = `📋 Overdue (${overdue.length}): ` + overdue.map(t => `${t.title} (${t.dueDate})`).join(', ');
-      }
-      else response = "Try: create a card called 'Demo' or delete 'Old task' or 'show overdue'";
-      addAIMessage(response);
-    }, 800);
-  }
-  
-  function showDeepSeekActions() { showCreateModal('deepseek',null); }
-  
-  function exportData(f) {
-    let data = getFilteredTasks();
-    if(f==='json') { 
-      let str = JSON.stringify(data,null,2); 
-      let uri = 'data:application/json;charset=utf-8,'+encodeURIComponent(str); 
-      let a = document.createElement('a'); 
-      a.href = uri; 
-      a.download = 'tasks.json'; 
-      a.click(); 
-      showToast('JSON exported','success'); 
-    }
-    if(f==='csv') { 
-      let csv = 'Title,Source,Priority,Status,Due Date,Assignee\n'; 
-      data.forEach(t=>csv+=`"${t.title}",${t.source},${t.priority},${t.status},${t.dueDate||''},${t.assignee}\n`); 
-      let uri = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv); 
-      let a = document.createElement('a'); 
-      a.href=uri; 
-      a.download='tasks.csv'; 
-      a.click(); 
-      showToast('CSV exported','success'); 
-    }
-  }
-  
-  function exportPDF() { 
-    const { jsPDF } = window.jspdf; 
-    const doc = new jsPDF(); 
-    doc.text('UnifyAI Report',14,22); 
-    doc.autoTable({ 
-      head:[['Title','Source','Priority','Status','Due Date']], 
-      body:getFilteredTasks().map(t=>[t.title,t.source,t.priority,t.status,t.dueDate||'']) 
-    }); 
-    doc.save('report.pdf'); 
-    showToast('PDF generated','success'); 
-  }
-  
-  function showToast(m,t) { 
-    let c = document.getElementById('toast-container'); 
-    let toast = document.createElement('div'); 
-    toast.className='toast'; 
-    toast.innerHTML = (t==='success'?'✅':t==='error'?'❌':'ℹ️')+' '+m; 
-    c.appendChild(toast); 
-    setTimeout(()=>toast.remove(),3000); 
-  }
-  
-  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-  
-  function setTheme(theme, e) { 
-    if(e) e.preventDefault(); 
-    document.body.classList.toggle('light-theme', theme==='light'); 
-    localStorage.setItem('theme', theme); 
-    document.querySelectorAll('.theme-toggle button').forEach(b=>b.classList.remove('active')); 
-    if(theme==='light') document.querySelector('.theme-toggle button:last-child').classList.add('active'); 
-    else document.querySelector('.theme-toggle button:first-child').classList.add('active'); 
-  }
-  
-  function showDashboard() { renderView(); showToast('Dashboard refreshed','info'); }
-  
-  function initDragAndDrop() {}
+};
+
+// Add a helper function for quick edit
+window.quickEditTask = quickEditTask;
 </script>
 </body>
 </html>
